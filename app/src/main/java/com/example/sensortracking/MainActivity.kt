@@ -14,7 +14,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SensorTrackingTheme {
-                SensorTrackingApp()
+                SensorTrackingScreen()
             }
         }
     }
@@ -22,8 +22,8 @@ class MainActivity : ComponentActivity() {
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun AppPreview() {
     SensorTrackingTheme {
-        SensorTrackingApp()
+        SensorTrackingScreen()
     }
 }
