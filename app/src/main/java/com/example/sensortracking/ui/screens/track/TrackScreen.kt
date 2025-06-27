@@ -185,7 +185,7 @@ fun TrackScreen(
         )
     }
 
-    // Zoom between 0% and 300%
+    // Zoom 0% and 300%
     val minZoom = 0.0f
     val maxZoom = 3.0f
     val zoomPercent = (uiState.zoom * 100).roundToInt().coerceIn(0, 300)
