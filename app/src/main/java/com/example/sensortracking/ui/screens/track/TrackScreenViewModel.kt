@@ -26,5 +26,11 @@ class TrackScreenViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(area = Area(length, width))
     }
 
-    // Add more logic as needed for updating user position, floor plan, etc.
-} 
+    fun saveTracking() {
+        // TODO: Implement save logic (future: show name/desc dialog)
+    }
+
+    fun newTracking() {
+        // TODO: Implement new tracking logic (future: show name/desc dialog)
+    }
+}

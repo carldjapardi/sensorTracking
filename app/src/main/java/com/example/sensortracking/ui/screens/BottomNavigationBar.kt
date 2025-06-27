@@ -12,20 +12,25 @@ import androidx.compose.material.icons.filled.*
 fun BottomNavigationBar(
     navController: NavController,
     selected: String,
-    onTrackTabTapped: () -> Unit = {}
+    onTrackTabTapped: () -> Unit = {},
+    onTabSelected: (String) -> Unit = {}
 ) {
     NavigationBar {
         NavigationBarItem(
             icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
             label = { Text("Home") },
             selected = selected == "home",
-            onClick = { if (selected != "home") navController.navigate("home") }
+            onClick = {
+                onTabSelected("home")
+                if (selected != "home") navController.navigate("home")
+            }
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.PlayArrow, contentDescription = "Track") },
             label = { Text("Track") },
             selected = selected == "track",
             onClick = {
+                onTabSelected("track")
                 if (selected != "track") {
                     navController.navigate("track")
                 }
@@ -36,13 +41,19 @@ fun BottomNavigationBar(
             icon = { Icon(Icons.Default.Create, contentDescription = "Upload") },
             label = { Text("Uploads") },
             selected = selected == "upload",
-            onClick = { if (selected != "upload") navController.navigate("upload") }
+            onClick = {
+                onTabSelected("upload")
+                if (selected != "upload") navController.navigate("upload")
+            }
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
             label = { Text("Settings") },
             selected = selected == "settings",
-            onClick = { if (selected != "settings") navController.navigate("settings") }
+            onClick = {
+                onTabSelected("settings")
+                if (selected != "settings") navController.navigate("settings")
+            }
         )
     }
 } 

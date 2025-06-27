@@ -5,7 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.example.sensortracking.ui.theme.SensorTrackingTheme
@@ -18,6 +21,9 @@ import com.example.sensortracking.ui.screens.track.TrackScreen
 import com.example.sensortracking.ui.screens.UploadScreen
 import com.example.sensortracking.ui.screens.SettingsScreen
 import com.example.sensortracking.ui.screens.BottomNavigationBar
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.sensortracking.ui.AppViewModel
+import com.example.sensortracking.ui.NavigationEvent
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,15 +36,55 @@ class MainActivity : ComponentActivity() {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route ?: "home"
 
+                // Use AppViewModel for navigation events
+                val appViewModel: AppViewModel = viewModel()
+                val navigationEvent by appViewModel.navigationEvent.collectAsState()
+                val isOnTrackScreen = currentRoute == "track"
+
                 Scaffold(
                     bottomBar = {
                         BottomNavigationBar(
                             navController = navController,
                             selected = currentRoute,
-                            onTrackTabTapped = { trackTabTrigger++ }
+                            onTrackTabTapped = { trackTabTrigger++ },
+                            onTabSelected = { route ->
+                                appViewModel.requestNavigation(route, isOnTrackScreen)
+                            }
                         )
                     }
                 ) { innerPadding ->
+                    // Handle navigation events from AppViewModel
+                    when (val event = navigationEvent) {
+                        is NavigationEvent.ConfirmLeaveTrack -> {
+                            AlertDialog(
+                                onDismissRequest = { appViewModel.clearNavigationEvent() },
+                                title = { Text("Stop Tracking?") },
+                                text = { Text("Do you want to stop the current tracking and save, or cancel?") },
+                                confirmButton = {
+                                    Button(onClick = {
+                                        // TODO: Save tracking if needed
+                                        appViewModel.confirmLeaveTrack(event.route)
+                                    }) { Text("Save and Leave") }
+                                },
+                                dismissButton = {
+                                    Button(onClick = {
+                                        appViewModel.clearNavigationEvent()
+                                    }) { Text("Cancel") }
+                                }
+                            )
+                        }
+                        is NavigationEvent.NavigateTo -> {
+                            LaunchedEffect(event.route) {
+                                navController.navigate(event.route) {
+                                    launchSingleTop = true
+                                    restoreState = true
+                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                }
+                                appViewModel.clearNavigationEvent()
+                            }
+                        }
+                        else -> {}
+                    }
                     NavHost(
                         navController = navController,
                         startDestination = "home",

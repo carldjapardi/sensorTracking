@@ -3,13 +3,25 @@ package com.example.sensortracking.ui.screens.track
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
@@ -20,15 +32,20 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -36,21 +53,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.sensortracking.ui.screens.BottomNavigationBar
-import kotlin.math.roundToInt
 import kotlin.math.max
 import kotlin.math.min
-import androidx.compose.ui.geometry.Offset
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrackScreen(
     navController: NavController,
     viewModel: TrackScreenViewModel = viewModel(),
-    showStartDialogOnNav: Int = 0 // Int so it triggers on every change
+    showStartDialogOnNav: Int = 0
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showNewTrackingDialog by remember { mutableStateOf(false) }
+    var showNewTrackingConfirmDialog by remember { mutableStateOf(false) }
+    var showSaveTrackingDialog by remember { mutableStateOf(false) }
     var showAreaDialog by remember { mutableStateOf(false) }
     var tempLength by remember { mutableStateOf(uiState.area.length.toInt().toString()) }
     var tempWidth by remember { mutableStateOf(uiState.area.width.toInt().toString()) }
@@ -63,24 +80,39 @@ fun TrackScreen(
         showStartDialog = true
     }
 
-    // Dialog for new tracking
-    if (showNewTrackingDialog) {
+    // Confirmation dialog for new tracking
+    if (showNewTrackingConfirmDialog) {
         AlertDialog(
-            onDismissRequest = { showNewTrackingDialog = false },
+            onDismissRequest = { showNewTrackingConfirmDialog = false },
             title = { Text("Start New Tracking") },
             text = { Text("Do you want to save the current tracking before starting a new one?") },
             confirmButton = {
                 Button(onClick = {
-                    showNewTrackingDialog = false
-                    // TODO: Save current tracking
+                    showNewTrackingConfirmDialog = false
+                    // TODO: Save current tracking (future: show name/desc dialog)
                     showStartDialog = true
-                }) { Text("Save and Start New Tracking") }
+                }) { Text("Save and New Tracking") }
             },
             dismissButton = {
+                Button(onClick = { showNewTrackingConfirmDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    // Dialog for saving current tracking
+    if (showSaveTrackingDialog) {
+        AlertDialog(
+            onDismissRequest = { showSaveTrackingDialog = false },
+            title = { Text("Save Tracking") },
+            text = { Text("Do you want to stop tracking and save?") },
+            confirmButton = {
                 Button(onClick = {
-                    showNewTrackingDialog = false
-                    showStartDialog = true
-                }) { Text("Do Not Save") }
+                    showSaveTrackingDialog = false
+                    // TODO: Save current tracking (future: show name/desc dialog)
+                }) { Text("Stop Tracking and Save") }
+            },
+            dismissButton = {
+                Button(onClick = { showSaveTrackingDialog = false }) { Text("Cancel") }
             }
         )
     }
@@ -175,7 +207,7 @@ fun TrackScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // 1. Scale/Zoom/Area/New Tracking Row (taller, better spacing)
+            // 1. Info Row: Save and New Tracking icons
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -183,11 +215,17 @@ fun TrackScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                OutlinedButton(
-                    onClick = { showNewTrackingDialog = true },
-                    modifier = Modifier.height(40.dp).defaultMinSize(minWidth = 1.dp)
+                IconButton(
+                    onClick = { showNewTrackingConfirmDialog = true },
+                    modifier = Modifier.size(40.dp)
                 ) {
-                    Text("New Tracking", fontSize = 16.sp, modifier = Modifier.padding(horizontal = 6.dp))
+                    Icon(Icons.Default.Add, contentDescription = "New Tracking", modifier = Modifier.size(28.dp))
+                }
+                IconButton(
+                    onClick = { showSaveTrackingDialog = true },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(Icons.Default.Save, contentDescription = "Save Tracking", modifier = Modifier.size(28.dp))
                 }
                 Spacer(Modifier.weight(1f))
                 Column {
