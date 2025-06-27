@@ -159,7 +159,7 @@ class SensorFusion(
             gravity[2] = cos(orientation[1]) * cos(orientation[2])
 
             // Apply complementary filter with drift compensation
-            val currentTime = System.currentTimeMkaillis()
+            val currentTime = System.currentTimeMillis()
             if (lastUpdate != 0L) {
                 val dt = (currentTime - lastUpdate) / 1000.0f
                 // Create new array for filtered acceleration

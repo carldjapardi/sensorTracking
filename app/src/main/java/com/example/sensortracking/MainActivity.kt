@@ -7,6 +7,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.sensortracking.ui.theme.SensorTrackingTheme
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.sensortracking.ui.screens.HomeScreen
+import com.example.sensortracking.ui.screens.TrackScreen
+import com.example.sensortracking.ui.screens.UploadScreen
+import com.example.sensortracking.ui.screens.SettingsScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -14,16 +21,17 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SensorTrackingTheme {
-                SensorTrackingScreen()
+                val navController = rememberNavController()
+                NavHost(
+                    navController = navController,
+                    startDestination = "home"
+                ) {
+                    composable("home") { HomeScreen(navController) }
+                    composable("track") { TrackScreen(navController) }
+                    composable("upload") { UploadScreen(navController) }
+                    composable("settings") { SettingsScreen(navController) }
+                }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun AppPreview() {
-    SensorTrackingTheme {
-        SensorTrackingScreen()
     }
 }
