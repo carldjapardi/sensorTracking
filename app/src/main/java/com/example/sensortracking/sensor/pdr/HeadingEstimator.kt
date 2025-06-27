@@ -24,7 +24,9 @@ class HeadingEstimator(private val config: PDRConfig) {
     private var magnetometerScale: FloatArray = FloatArray(3) { 1f }
     private var isMagnetometerCalibrated = false
     private var calibrationSamples = 0
-    private val calibrationRequired = 50
+    private val calibrationRequired = 200
+    private var calibrationStartTime: Long = 0
+    private val minCalibrationTimeMs = 3000L
     
     // Complementary filter variables
     private var alpha: Float = config.headingSmoothingFactor
@@ -156,6 +158,11 @@ class HeadingEstimator(private val config: PDRConfig) {
      * Calibrate magnetometer using ellipsoid fitting
      */
     private fun calibrateMagnetometer(magnetometer: FloatArray) {
+        // Set start time on first sample
+        if (calibrationSamples == 0) {
+            calibrationStartTime = System.currentTimeMillis()
+        }
+        
         calibrationSamples++
         
         // Collect magnetometer samples - accumulate bias
@@ -167,12 +174,11 @@ class HeadingEstimator(private val config: PDRConfig) {
         val strength = sqrt(magnetometer[0].pow(2) + magnetometer[1].pow(2) + magnetometer[2].pow(2))
         magneticFieldStrength.add(strength)
         
-        // Debug logging every 10 samples
-        if (calibrationSamples % 10 == 0) {
-            Log.d("HeadingEstimator", "Calibration progress: $calibrationSamples/$calibrationRequired (${(calibrationSamples.toFloat() / calibrationRequired * 100).toInt()}%)")
-        }
+        // Check if calibration is complete (both samples and time requirements met)
+        val currentTime = System.currentTimeMillis()
+        val timeElapsed = currentTime - calibrationStartTime
         
-        if (calibrationSamples >= calibrationRequired) {
+        if (calibrationSamples >= calibrationRequired && timeElapsed >= minCalibrationTimeMs) {
             // Calculate bias (mean of all samples)
             magnetometerBias[0] /= calibrationRequired.toFloat()
             magnetometerBias[1] /= calibrationRequired.toFloat()
@@ -187,7 +193,7 @@ class HeadingEstimator(private val config: PDRConfig) {
             isMagnetometerCalibrated = true
             lastMagneticStrength = avgStrength
             
-            Log.d("HeadingEstimator", "Calibration complete! Bias: [${magnetometerBias[0]}, ${magnetometerBias[1]}, ${magnetometerBias[2]}], Avg Strength: $avgStrength")
+            Log.d("HeadingEstimator", "Calibration complete! Bias: [${magnetometerBias[0]}, ${magnetometerBias[1]}, ${magnetometerBias[2]}], Avg Strength: $avgStrength, Time: ${timeElapsed}ms")
         }
     }
     
@@ -253,6 +259,7 @@ class HeadingEstimator(private val config: PDRConfig) {
         magnetometerScale = FloatArray(3) { 1f }
         isMagnetometerCalibrated = false
         calibrationSamples = 0
+        calibrationStartTime = 0
         magneticFieldStrength.clear()
         lastMagneticStrength = 0f
     }
@@ -273,6 +280,15 @@ class HeadingEstimator(private val config: PDRConfig) {
      * Get calibration progress (0.0 to 1.0)
      */
     fun getCalibrationProgress(): Float {
-        return (calibrationSamples.toFloat() / calibrationRequired).coerceIn(0f, 1f)
+        val sampleProgress = calibrationSamples.toFloat() / calibrationRequired
+        val timeProgress = if (calibrationStartTime > 0) {
+            val timeElapsed = System.currentTimeMillis() - calibrationStartTime
+            (timeElapsed.toFloat() / minCalibrationTimeMs).coerceIn(0f, 1f)
+        } else {
+            0f
+        }
+        
+        // Return the minimum of sample and time progress
+        return minOf(sampleProgress, timeProgress)
     }
 } 

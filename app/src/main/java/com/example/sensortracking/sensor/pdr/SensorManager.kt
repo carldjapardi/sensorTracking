@@ -42,6 +42,7 @@ class PDRSensorManager(
     // Calibration state
     private var isCalibrating = false
     private var calibrationProgress = 0f
+    private var hasLoggedFirstPDR = false
     
     companion object {
         private const val TAG = "PDRSensorManager"
@@ -147,7 +148,12 @@ class PDRSensorManager(
         // Update PDR data flow
         if (pdrResult != null) {
             _pdrData.value = pdrResult
-            Log.d(TAG, "PDR data updated - Position: ${pdrResult.position}, Steps: ${pdrResult.stepCount}, Distance: ${pdrResult.totalDistance}")
+            
+            // Log only the first PDR update
+            if (pdrResult.stepCount == 0 && pdrResult.totalDistance == 0f && !hasLoggedFirstPDR) {
+                Log.d(TAG, "First PDR data received - Position: ${pdrResult.position}, Heading: ${pdrResult.currentHeading.heading}")
+                hasLoggedFirstPDR = true
+            }
         }
         
         // Update calibration progress
@@ -252,20 +258,14 @@ class PDRSensorManager(
      * Handle sensor accuracy changes
      */
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        // Removed logging to reduce log spam
+        // Only log if accuracy becomes unreliable
         when (accuracy) {
             SensorManager.SENSOR_STATUS_UNRELIABLE -> {
                 Log.w(TAG, "Sensor accuracy unreliable: ${sensor?.name}")
                 // Could trigger recalibration here
             }
-            SensorManager.SENSOR_STATUS_ACCURACY_LOW -> {
-                Log.w(TAG, "Sensor accuracy low: ${sensor?.name}")
-            }
-            SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM -> {
-                Log.d(TAG, "Sensor accuracy medium: ${sensor?.name}")
-            }
-            SensorManager.SENSOR_STATUS_ACCURACY_HIGH -> {
-                Log.d(TAG, "Sensor accuracy high: ${sensor?.name}")
-            }
+            // Removed other accuracy level logs to reduce spam
         }
     }
     

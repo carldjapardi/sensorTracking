@@ -39,8 +39,6 @@ class StepDetector(private val config: PDRConfig) {
             stepCount++
             lastStepTime = timestamp
             
-            Log.d(TAG, "Step detected! Magnitude: $magnitude, Step count: $stepCount")
-            
             return StepData(
                 timestamp = timestamp,
                 magnitude = magnitude,

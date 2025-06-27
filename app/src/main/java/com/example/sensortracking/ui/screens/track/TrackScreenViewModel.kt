@@ -130,12 +130,15 @@ class TrackScreenViewModel : ViewModel() {
         viewModelScope.launch {
             pdrSensorManager?.pdrData?.collect { pdrData ->
                 val strideAlgorithm = pdrProcessor?.getCurrentStrideMethod() ?: "Weinberg"
+                val isCalibrationComplete = pdrSensorManager?.isCalibrationComplete() ?: false
+                val calibrationProgress = pdrSensorManager?.getCalibrationProgress() ?: 0f
+                
                 _uiState.update { 
                     it.copy(
                         pdrData = pdrData,
                         isTracking = pdrData.isTracking,
-                        isCalibrating = !(pdrSensorManager?.isCalibrationComplete() ?: true),
-                        calibrationProgress = pdrSensorManager?.getCalibrationProgress() ?: 0f,
+                        isCalibrating = !isCalibrationComplete,
+                        calibrationProgress = calibrationProgress,
                         strideAlgorithm = strideAlgorithm
                     )
                 }

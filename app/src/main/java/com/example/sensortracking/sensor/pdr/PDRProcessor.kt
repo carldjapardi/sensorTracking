@@ -92,8 +92,6 @@ class PDRProcessor(
         val stepData = stepDetector.detectStep(accelerometer, timestamp)
         
         if (stepData != null) {
-            Log.d(TAG, "Step detected! Step count: ${stepCount + 1}")
-            
             // Estimate stride length
             val strideData = strideEstimator.estimateStride(accelerometer, timestamp)
             
