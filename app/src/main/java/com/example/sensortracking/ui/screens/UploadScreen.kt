@@ -22,9 +22,6 @@ fun UploadScreen(navController: NavController) {
                     }
                 }
             )
-        },
-        bottomBar = {
-            BottomNavigationBar(navController = navController, selected = "upload")
         }
     ) { innerPadding ->
         Box(modifier = Modifier

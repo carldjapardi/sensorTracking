@@ -9,7 +9,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 
 @Composable
-fun BottomNavigationBar(navController: NavController, selected: String) {
+fun BottomNavigationBar(
+    navController: NavController,
+    selected: String,
+    onTrackTabTapped: () -> Unit = {}
+) {
     NavigationBar {
         NavigationBarItem(
             icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
@@ -21,7 +25,12 @@ fun BottomNavigationBar(navController: NavController, selected: String) {
             icon = { Icon(Icons.Default.PlayArrow, contentDescription = "Track") },
             label = { Text("Track") },
             selected = selected == "track",
-            onClick = { if (selected != "track") navController.navigate("track") }
+            onClick = {
+                if (selected != "track") {
+                    navController.navigate("track")
+                }
+                onTrackTabTapped()
+            }
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Create, contentDescription = "Upload") },

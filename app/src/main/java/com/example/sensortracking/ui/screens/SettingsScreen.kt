@@ -22,9 +22,6 @@ fun SettingsScreen(navController: NavController) {
                     }
                 }
             )
-        },
-        bottomBar = {
-            BottomNavigationBar(navController = navController, selected = "settings")
         }
     ) { innerPadding ->
         Box(modifier = Modifier

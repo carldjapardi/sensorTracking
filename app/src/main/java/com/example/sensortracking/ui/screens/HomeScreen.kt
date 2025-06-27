@@ -23,9 +23,6 @@ fun HomeScreen(navController: NavController) {
                     }
                 }
             )
-        },
-        bottomBar = {
-            BottomNavigationBar(navController = navController, selected = "home")
         }
     ) { innerPadding ->
         Box(modifier = Modifier
