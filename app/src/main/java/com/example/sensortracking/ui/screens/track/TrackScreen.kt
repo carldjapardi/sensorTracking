@@ -223,10 +223,9 @@ fun TrackScreen(
         )
     }
     
-    // Zoom Set to 0% and 300%..
+    // Zoom Range 0-300%
     val minZoom = 0.0f
     val maxZoom = 3.0f
-    val zoomPercent = (uiState.zoom * 100).roundToInt().coerceIn(0, 300)
     
     Scaffold(
         topBar = {
@@ -247,54 +246,7 @@ fun TrackScreen(
                 .padding(innerPadding)
                 .verticalScroll(scrollState)
         ) {
-            // 1. Info Row: Save and New Tracking icons
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(20.dp)
-            ) {
-                IconButton(
-                    onClick = { showNewTrackingConfirmDialog = true },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "New Tracking", modifier = Modifier.size(28.dp))
-                }
-                IconButton(
-                    onClick = { showSaveTrackingDialog = true },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(Icons.Default.Save, contentDescription = "Save Tracking", modifier = Modifier.size(28.dp))
-                }
-                Spacer(Modifier.weight(1f))
-                Column {
-                    Text("Zoom: $zoomPercent%", fontSize = 16.sp)
-                    Text("Area: ${uiState.area.length.toInt()}M X ${uiState.area.width.toInt()}M", fontSize = 16.sp)
-                }
-                Column {
-                    IconButton(
-                        onClick = {
-                            val newZoom = min(uiState.zoom * 1.2f, maxZoom)
-                            viewModel.onZoomChange(newZoom)
-                        },
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(Icons.Filled.ZoomIn, contentDescription = "Zoom In", modifier = Modifier.size(30.dp))
-                    }
-                    IconButton(
-                        onClick = {
-                            val newZoom = max(uiState.zoom / 1.2f, minZoom)
-                            viewModel.onZoomChange(newZoom)
-                        },
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(Icons.Filled.ZoomOut, contentDescription = "Zoom Out", modifier = Modifier.size(30.dp))
-                    }
-                }
-            }
-            
-            // 2. Calibration Progress (if calibrating)
+            // 1. Calibration Card (if calibrating)
             if (uiState.isCalibrating) {
                 Card(
                     modifier = Modifier
@@ -329,11 +281,11 @@ fun TrackScreen(
                 }
             }
             
-            // 3. Grid/Floor Plan Area (larger container)
+            // 2. Grid/Floor Plan Canvas
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(400.dp) // Fixed height for grid
+                    .height(350.dp) // Fixed height
                     .padding(8.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(Color.LightGray)
@@ -350,8 +302,54 @@ fun TrackScreen(
                     pathHistory = viewModel.getPathHistory()
                 )
             }
-            
-            // 4. Action Buttons
+
+            // 3. Info Row: New Tracking, Save Tracking, Zoom, Area
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                IconButton(
+                    onClick = { showNewTrackingConfirmDialog = true },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "New Tracking", modifier = Modifier.size(28.dp))
+                }
+                IconButton(
+                    onClick = { showSaveTrackingDialog = true },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(Icons.Default.Save, contentDescription = "Save Tracking", modifier = Modifier.size(28.dp))
+                }
+                Spacer(Modifier.weight(1f))
+                Column {
+                    Text("Area: ${uiState.area.length.toInt()}M X ${uiState.area.width.toInt()}M", fontSize = 16.sp)
+                }
+                Row {
+                    IconButton(
+                        onClick = {
+                            val newZoom = min(uiState.zoom * 1.2f, maxZoom)
+                            viewModel.onZoomChange(newZoom)
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(Icons.Filled.ZoomIn, contentDescription = "Zoom In", modifier = Modifier.size(30.dp))
+                    }
+                    IconButton(
+                        onClick = {
+                            val newZoom = max(uiState.zoom / 1.2f, minZoom)
+                            viewModel.onZoomChange(newZoom)
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(Icons.Filled.ZoomOut, contentDescription = "Zoom Out", modifier = Modifier.size(30.dp))
+                    }
+                }
+            }
+
+            // 4. Action Buttons: Start Tracking, Scan Barcode
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -361,34 +359,28 @@ fun TrackScreen(
                 if (uiState.isTracking) {
                     Button(
                         onClick = viewModel::onStopTracking,
-                        modifier = Modifier.width(140.dp)
+                        modifier = Modifier.width(140.dp).height(50.dp)
                     ) {
-                        Icon(Icons.Default.Stop, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
                         Text("Stop Tracking")
                     }
                 } else {
                     Button(
                         onClick = viewModel::onStartTracking,
                         enabled = uiState.canStartTracking,
-                        modifier = Modifier.width(140.dp)
+                        modifier = Modifier.width(140.dp).height(50.dp)
                     ) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
                         Text("Start Tracking")
                     }
                 }
                 Button(
                     onClick = viewModel::onScanBarcode,
-                    modifier = Modifier.width(140.dp)
+                    modifier = Modifier.width(140.dp).height(50.dp)
                 ) {
-                    Icon(Icons.Default.Star, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
                     Text("Scan Barcode")
                 }
             }
             
-            // 5. Combined PDR Data Display (collapsible)
+            // 5. PDR Data Display
             var pdrExpanded by remember { mutableStateOf(true) }
             Card(
                 modifier = Modifier
