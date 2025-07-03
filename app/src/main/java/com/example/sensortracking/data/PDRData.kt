@@ -30,19 +30,8 @@ data class StepData(
  */
 data class StrideData(
     val length: Float,
-    val confidence: Float,
-    val method: StrideEstimationMethod
+    val confidence: Float
 )
-
-/**
- * Methods for stride length estimation
- */
-enum class StrideEstimationMethod {
-    WEINBERG,      // Based on Weinberg's algorithm
-    KIM,           // Based on Kim's algorithm
-    FIXED_LENGTH,  // Fixed step length
-    ADAPTIVE       // Adaptive based on acceleration variance
-}
 
 /**
  * Represents heading/orientation data
@@ -114,7 +103,6 @@ data class PDRConfig(
     val stepThreshold: Float = 1.8f,
     val stepCooldownMs: Long = 500,
     val defaultStrideLength: Float = 0.7f,
-    val strideEstimationMethod: StrideEstimationMethod = StrideEstimationMethod.WEINBERG,
     val headingSmoothingFactor: Float = 0.8f,
     val autoCorrelationWindowSize: Int = 50,
     val lowPassFilterAlpha: Float = 0.8f

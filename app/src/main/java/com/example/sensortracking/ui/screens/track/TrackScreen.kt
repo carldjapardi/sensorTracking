@@ -499,24 +499,8 @@ fun CombinedPDRDataDisplay(uiState: TrackScreenUiState, viewModel: TrackScreenVi
                 Text("${uiState.totalDistance.toFixed(2)}m", style = MaterialTheme.typography.bodySmall)
             }
             Column {
-                Text("Confidence:", style = MaterialTheme.typography.bodyMedium)
+                Text("Confidence:", style = MaterialTheme.typography.bodySmall)
                 Text("${(uiState.confidence * 100).toFixed(0)}%", style = MaterialTheme.typography.bodySmall)
-            }
-        }
-        
-        // Algorithm Selection
-        Spacer(Modifier.height(8.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Stride Algorithm:", style = MaterialTheme.typography.bodyMedium)
-            Button(
-                onClick = { viewModel.cycleStrideAlgorithm() },
-                modifier = Modifier.height(32.dp)
-            ) {
-                Text(uiState.strideAlgorithm, style = MaterialTheme.typography.bodySmall)
             }
         }
         

@@ -2,7 +2,6 @@ package com.example.sensortracking.sensor.pdr
 
 import android.util.Log
 import com.example.sensortracking.data.*
-import com.example.sensortracking.sensor.pdr.StrideEstimator.Gender
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -247,17 +246,6 @@ class PDRProcessor(
     fun getMagnetometerCalibrationProgress(): Float = headingEstimator.getCalibrationProgress()
     
     /**
-     * Set user characteristics for better stride estimation
-     */
-    fun setUserCharacteristics(
-        height: Float,
-        gender: Gender,
-        age: Int
-    ) {
-        strideEstimator.setUserCharacteristics(height, gender, age)
-    }
-    
-    /**
      * Update configuration
      */
     fun updateConfig(newConfig: PDRConfig) {
@@ -312,30 +300,4 @@ class PDRProcessor(
      * Check if currently tracking
      */
     fun isCurrentlyTracking(): Boolean = isTracking
-    
-    /**
-     * Get current stride estimation method
-     */
-    fun getCurrentStrideMethod(): String {
-        return when (strideEstimator.getCurrentMethod()) {
-            StrideEstimationMethod.WEINBERG -> "Weinberg"
-            StrideEstimationMethod.KIM -> "Kim"
-            StrideEstimationMethod.FIXED_LENGTH -> "Fixed Length"
-            StrideEstimationMethod.ADAPTIVE -> "Adaptive"
-        }
-    }
-    
-    /**
-     * Set stride estimation method
-     */
-    fun setStrideEstimationMethod(method: StrideEstimationMethod) {
-        strideEstimator.setStrideEstimationMethod(method)
-    }
-    
-    /**
-     * Get available stride estimation methods
-     */
-    fun getAvailableStrideMethods(): Map<StrideEstimationMethod, String> {
-        return strideEstimator.getAvailableMethods()
-    }
 } 

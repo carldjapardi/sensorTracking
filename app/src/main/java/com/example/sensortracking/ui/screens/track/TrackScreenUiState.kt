@@ -46,9 +46,6 @@ data class TrackScreenUiState(
     val hasGyroscope: Boolean = false,
     val hasMagnetometer: Boolean = false,
     
-    // Algorithm information
-    val strideAlgorithm: String = "Weinberg",
-    
     // Error states
     val errorMessage: String? = null,
     val isError: Boolean = false
@@ -56,11 +53,11 @@ data class TrackScreenUiState(
     val allSensorsAvailable: Boolean
         get() = hasAccelerometer && hasGyroscope && hasMagnetometer
     
-    val canStartTracking: Boolean
-        get() = allSensorsAvailable && !isCalibrating && pdrData?.isTracking == false
-    
     val currentPosition: Position
         get() = pdrData?.position ?: Position(0f, 0f)
+    
+    val currentHeading: Float
+        get() = pdrData?.currentHeading?.heading ?: 0f
     
     val stepCount: Int
         get() = pdrData?.stepCount ?: 0
@@ -68,9 +65,9 @@ data class TrackScreenUiState(
     val totalDistance: Float
         get() = pdrData?.totalDistance ?: 0f
     
-    val currentHeading: Float
-        get() = pdrData?.currentHeading?.heading ?: 0f
-    
     val confidence: Float
         get() = pdrData?.confidence ?: 0f
+    
+    val canStartTracking: Boolean
+        get() = !isTracking && !isCalibrating && pdrData != null
 } 

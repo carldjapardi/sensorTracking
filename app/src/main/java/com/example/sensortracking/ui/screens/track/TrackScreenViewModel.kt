@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sensortracking.data.PDRConfig
 import com.example.sensortracking.data.Position
-import com.example.sensortracking.data.StrideEstimationMethod
 import com.example.sensortracking.sensor.pdr.PDRProcessor
 import com.example.sensortracking.sensor.pdr.PDRSensorManager
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -129,7 +128,6 @@ class TrackScreenViewModel : ViewModel() {
     private fun observePDRData() {
         viewModelScope.launch {
             pdrSensorManager?.pdrData?.collect { pdrData ->
-                val strideAlgorithm = pdrProcessor?.getCurrentStrideMethod() ?: "Weinberg"
                 val isCalibrationComplete = pdrSensorManager?.isCalibrationComplete() ?: false
                 val calibrationProgress = pdrSensorManager?.getCalibrationProgress() ?: 0f
                 
@@ -138,8 +136,7 @@ class TrackScreenViewModel : ViewModel() {
                         pdrData = pdrData,
                         isTracking = pdrData.isTracking,
                         isCalibrating = !isCalibrationComplete,
-                        calibrationProgress = calibrationProgress,
-                        strideAlgorithm = strideAlgorithm
+                        calibrationProgress = calibrationProgress
                     )
                 }
             }
@@ -230,28 +227,6 @@ class TrackScreenViewModel : ViewModel() {
     
     fun getPathHistory(): List<Position> {
         return pdrSensorManager?.getPathHistory() ?: emptyList()
-    }
-    
-    fun cycleStrideAlgorithm() {
-        val currentMethod = pdrProcessor?.getCurrentStrideMethod() ?: "Weinberg"
-        val nextMethod = when (currentMethod) {
-            "Weinberg" -> StrideEstimationMethod.KIM
-            "Kim" -> StrideEstimationMethod.ADAPTIVE
-            "Adaptive" -> StrideEstimationMethod.WEINBERG
-            else -> StrideEstimationMethod.WEINBERG
-        }
-        
-        pdrProcessor?.setStrideEstimationMethod(nextMethod)
-        
-        // Update UI state immediately
-        _uiState.update { 
-            it.copy(strideAlgorithm = when (nextMethod) {
-                StrideEstimationMethod.WEINBERG -> "Weinberg"
-                StrideEstimationMethod.KIM -> "Kim"
-                StrideEstimationMethod.FIXED_LENGTH -> "Fixed Length"
-                StrideEstimationMethod.ADAPTIVE -> "Adaptive"
-            })
-        }
     }
     
     fun isCalibrationComplete(): Boolean {
