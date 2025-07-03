@@ -74,16 +74,16 @@ class TrackScreenViewModel : ViewModel() {
                 val sensorsAvailable = pdrSensorManager!!.initializeSensors()
                 
                 if (sensorsAvailable) {
-                    // Start calibration
-                    pdrSensorManager!!.startCalibration()
+                    // Get sensor availability
+                    val sensorAvailability = pdrSensorManager!!.getSensorAvailability()
                     
                     // Update UI state
                     _uiState.update { 
                         it.copy(
-                            hasAccelerometer = true,
-                            hasGyroscope = true,
-                            hasMagnetometer = true,
-                            isCalibrating = true
+                            hasAccelerometer = sensorAvailability.hasAccelerometer,
+                            hasGyroscope = sensorAvailability.hasGyroscope,
+                            hasMagnetometer = sensorAvailability.hasMagnetometer,
+                            hasRotationVector = sensorAvailability.hasRotationVector,
                         )
                     }
                     
@@ -128,33 +128,11 @@ class TrackScreenViewModel : ViewModel() {
     private fun observePDRData() {
         viewModelScope.launch {
             pdrSensorManager?.pdrData?.collect { pdrData ->
-                val isCalibrationComplete = pdrSensorManager?.isCalibrationComplete() ?: false
-                val calibrationProgress = pdrSensorManager?.getCalibrationProgress() ?: 0f
-                
                 _uiState.update { 
                     it.copy(
                         pdrData = pdrData,
-                        isTracking = pdrData.isTracking,
-                        isCalibrating = !isCalibrationComplete,
-                        calibrationProgress = calibrationProgress
+                        isTracking = pdrData.isTracking
                     )
-                }
-            }
-        }
-        
-        // Observe sensor data for UI display
-        viewModelScope.launch {
-            pdrSensorManager?.sensorData?.collect { sensorData ->
-                if (sensorData != null) {
-                    _uiState.update { 
-                        it.copy(
-                            imuData = IMUData(
-                                accelerometer = "[${sensorData.accelerometer[0].toFixed(2)}, ${sensorData.accelerometer[1].toFixed(2)}, ${sensorData.accelerometer[2].toFixed(2)}]",
-                                gyroscope = "[${sensorData.gyroscope[0].toFixed(2)}, ${sensorData.gyroscope[1].toFixed(2)}, ${sensorData.gyroscope[2].toFixed(2)}]",
-                                magnetometer = "[${sensorData.magnetometer[0].toFixed(2)}, ${sensorData.magnetometer[1].toFixed(2)}, ${sensorData.magnetometer[2].toFixed(2)}]"
-                            )
-                        )
-                    }
                 }
             }
         }
@@ -227,10 +205,6 @@ class TrackScreenViewModel : ViewModel() {
     
     fun getPathHistory(): List<Position> {
         return pdrSensorManager?.getPathHistory() ?: emptyList()
-    }
-    
-    fun isCalibrationComplete(): Boolean {
-        return pdrSensorManager?.isCalibrationComplete() ?: false
     }
     
     override fun onCleared() {

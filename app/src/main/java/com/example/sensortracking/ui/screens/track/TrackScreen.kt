@@ -28,11 +28,9 @@ import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -243,41 +241,6 @@ fun TrackScreen(
                 .padding(innerPadding)
                 .verticalScroll(scrollState)
         ) {
-            // 1. Calibration Card (if calibrating)
-            if (uiState.isCalibrating) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp
-                            )
-                            Spacer(Modifier.width(12.dp))
-                            Text("Calibrating sensors...", style = MaterialTheme.typography.bodyMedium)
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        LinearProgressIndicator(
-                            progress = uiState.calibrationProgress,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Text(
-                            "${(uiState.calibrationProgress * 100).roundToInt()}%",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.align(Alignment.End)
-                        )
-                    }
-                }
-            }
-            
             // 2. Grid/Floor Plan Canvas
             Box(
                 modifier = Modifier
@@ -512,14 +475,11 @@ fun CombinedPDRDataDisplay(uiState: TrackScreenUiState, viewModel: TrackScreenVi
             Text("Gyro: ${if (uiState.hasGyroscope) "✓" else "✗"}", style = MaterialTheme.typography.bodySmall)
             Text("Mag: ${if (uiState.hasMagnetometer) "✓" else "✗"}", style = MaterialTheme.typography.bodySmall)
         }
-        
-        // IMU Data (if available)
-        if (uiState.pdrData != null) {
-            Spacer(Modifier.height(8.dp))
-            Text("Sensor Values:", style = MaterialTheme.typography.bodyMedium)
-            Text("Accelerometer: ${uiState.imuData.accelerometer}", style = MaterialTheme.typography.bodySmall)
-            Text("Gyroscope: ${uiState.imuData.gyroscope}", style = MaterialTheme.typography.bodySmall)
-            Text("Magnetometer: ${uiState.imuData.magnetometer}", style = MaterialTheme.typography.bodySmall)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Text("RotVec: ${if (uiState.hasRotationVector) "✓" else "✗"}", style = MaterialTheme.typography.bodySmall)
         }
     }
 }

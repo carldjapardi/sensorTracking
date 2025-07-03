@@ -27,7 +27,7 @@ class PDRProcessor(
     
     // Current state
     private var currentPosition = Position(0f, 0f)
-    private var currentHeading = HeadingData(0f, 0f, HeadingSource.MAGNETOMETER)
+    private var currentHeading = HeadingData(0f, 0f, HeadingSource.FUSED)
     private var stepCount = 0
     private var totalDistance = 0f
     private var isTracking = false
@@ -229,9 +229,12 @@ class PDRProcessor(
 
     fun getPathHistory(): List<Position> = pathHistory.toList()
 
-    fun isMagnetometerCalibrated(): Boolean = headingEstimator.isCalibrated()
-
-    fun getMagnetometerCalibrationProgress(): Float = headingEstimator.getCalibrationProgress()
+    /**
+     * Update rotation vector data in heading estimator
+     */
+    fun updateRotationVector(rotationVector: FloatArray) {
+        headingEstimator.updateRotationVector(rotationVector)
+    }
 
     fun updateConfig(newConfig: PDRConfig) {
         stepDetector.updateConfig(newConfig)
@@ -245,7 +248,7 @@ class PDRProcessor(
         headingEstimator.reset()
         
         currentPosition = Position(0f, 0f)
-        currentHeading = HeadingData(0f, 0f, HeadingSource.MAGNETOMETER)
+        currentHeading = HeadingData(0f, 0f, HeadingSource.FUSED)
         stepCount = 0
         totalDistance = 0f
         isTracking = false

@@ -7,13 +7,6 @@ import com.example.sensortracking.data.PDRConfig
 // Data class for area
 data class Area(val length: Float = 10f, val width: Float = 10f)
 
-// Data class for IMU sensor data
-data class IMUData(
-    val accelerometer: String = "-",
-    val gyroscope: String = "-",
-    val magnetometer: String = "-"
-)
-
 // Data class for initial position
 data class InitialPosition(
     val x: Float = 0f,
@@ -26,13 +19,10 @@ data class TrackScreenUiState(
     val area: Area = Area(),
     val floorPlan: Any? = null, // Placeholder for floor plan image or grid data
     val userPosition: Pair<Float, Float> = 0f to 0f,
-    val imuData: IMUData = IMUData(),
     
     // PDR Data
     val pdrData: PDRData? = null,
     val isTracking: Boolean = false,
-    val isCalibrating: Boolean = false,
-    val calibrationProgress: Float = 0f,
     
     // Dialog states
     val showInitialPositionDialog: Boolean = false,
@@ -45,13 +35,14 @@ data class TrackScreenUiState(
     val hasAccelerometer: Boolean = false,
     val hasGyroscope: Boolean = false,
     val hasMagnetometer: Boolean = false,
+    val hasRotationVector: Boolean = false,
     
     // Error states
     val errorMessage: String? = null,
     val isError: Boolean = false
 ) {
     val allSensorsAvailable: Boolean
-        get() = hasAccelerometer && hasGyroscope && hasMagnetometer
+        get() = hasAccelerometer && hasGyroscope && hasMagnetometer && hasRotationVector
     
     val currentPosition: Position
         get() = pdrData?.position ?: Position(0f, 0f)
@@ -69,5 +60,5 @@ data class TrackScreenUiState(
         get() = pdrData?.confidence ?: 0f
     
     val canStartTracking: Boolean
-        get() = !isTracking && !isCalibrating && pdrData != null
+        get() = !isTracking && pdrData != null
 } 

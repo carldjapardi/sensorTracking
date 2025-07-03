@@ -6,7 +6,6 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.util.Log
-import com.example.sensortracking.data.SensorData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,24 +24,17 @@ class PDRSensorManager(
     private var accelerometer: FloatArray = FloatArray(3)
     private var gyroscope: FloatArray = FloatArray(3)
     private var magnetometer: FloatArray = FloatArray(3)
+    private var rotationVector: FloatArray = FloatArray(4)
     
     // Sensor availability
     private var hasAccelerometer = false
     private var hasGyroscope = false
     private var hasMagnetometer = false
-    
-    // Sensor data flow
-    private val _sensorData = MutableStateFlow<SensorData?>(null)
-    val sensorData: StateFlow<SensorData?> = _sensorData.asStateFlow()
+    private var hasRotationVector = false
     
     // PDR data flow
     private val _pdrData = MutableStateFlow(pdrProcessor.getCurrentPDRData())
     val pdrData: StateFlow<com.example.sensortracking.data.PDRData> = _pdrData.asStateFlow()
-    
-    // Calibration state
-    private var isCalibrating = false
-    private var calibrationProgress = 0f
-    private var hasLoggedFirstPDR = false
     
     companion object {
         private const val TAG = "PDRSensorManager"
@@ -58,11 +50,13 @@ class PDRSensorManager(
         val accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         val gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
         val magnetometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+        val rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
         
         // Register sensors
         hasAccelerometer = accelerometerSensor != null
         hasGyroscope = gyroscopeSensor != null
         hasMagnetometer = magnetometerSensor != null
+        hasRotationVector = rotationVectorSensor != null
         
         if (hasAccelerometer) {
             sensorManager.registerListener(
@@ -97,7 +91,18 @@ class PDRSensorManager(
             Log.e(TAG, "Magnetometer not available")
         }
         
-        val allSensorsAvailable = hasAccelerometer && hasGyroscope && hasMagnetometer
+        if (hasRotationVector) {
+            sensorManager.registerListener(
+                this,
+                rotationVectorSensor,
+                SensorManager.SENSOR_DELAY_GAME
+            )
+            Log.d(TAG, "Rotation Vector sensor registered")
+        } else {
+            Log.e(TAG, "Rotation Vector sensor not available")
+        }
+        
+        val allSensorsAvailable = hasAccelerometer && hasGyroscope && hasMagnetometer && hasRotationVector
         Log.d(TAG, "Sensor initialization complete. All sensors available: $allSensorsAvailable")
         
         return allSensorsAvailable
@@ -120,6 +125,11 @@ class PDRSensorManager(
                 System.arraycopy(event.values, 0, magnetometer, 0, 3)
                 processSensorData()
             }
+            Sensor.TYPE_ROTATION_VECTOR -> {
+                System.arraycopy(event.values, 0, rotationVector, 0, 4)
+                pdrProcessor.updateRotationVector(rotationVector)
+                processSensorData()
+            }
         }
     }
     
@@ -129,18 +139,7 @@ class PDRSensorManager(
     private fun processSensorData() {
         val timestamp = System.currentTimeMillis()
         
-        // Create sensor data object with current values
-        val sensorData = SensorData(
-            accelerometer = accelerometer.clone(),
-            gyroscope = gyroscope.clone(),
-            magnetometer = magnetometer.clone(),
-            timestamp = timestamp
-        )
-        
-        // Update sensor data flow
-        _sensorData.value = sensorData
-        
-        // Always process with PDR for calibration
+        // Process with PDR
         val pdrResult = pdrProcessor.processSensorData(
             accelerometer, gyroscope, magnetometer, timestamp
         )
@@ -148,50 +147,8 @@ class PDRSensorManager(
         // Update PDR data flow
         if (pdrResult != null) {
             _pdrData.value = pdrResult
-            
-            // Log only the first PDR update
-            if (pdrResult.stepCount == 0 && pdrResult.totalDistance == 0f && !hasLoggedFirstPDR) {
-                Log.d(TAG, "First PDR data received - Position: ${pdrResult.position}, Heading: ${pdrResult.currentHeading.heading}")
-                hasLoggedFirstPDR = true
-            }
-        }
-        
-        // Update calibration progress
-        updateCalibrationProgress()
-    }
-    
-    /**
-     * Update calibration progress
-     */
-    private fun updateCalibrationProgress() {
-        if (isCalibrating) {
-            calibrationProgress = pdrProcessor.getMagnetometerCalibrationProgress()
-            
-            if (calibrationProgress >= 1.0f) {
-                isCalibrating = false
-                Log.d(TAG, "Magnetometer calibration complete")
-            }
         }
     }
-    
-    /**
-     * Start magnetometer calibration
-     */
-    fun startCalibration() {
-        isCalibrating = true
-        calibrationProgress = 0f
-        Log.d(TAG, "Starting magnetometer calibration...")
-    }
-    
-    /**
-     * Get calibration progress
-     */
-    fun getCalibrationProgress(): Float = calibrationProgress
-    
-    /**
-     * Check if calibration is complete
-     */
-    fun isCalibrationComplete(): Boolean = pdrProcessor.isMagnetometerCalibrated()
     
     /**
      * Start PDR tracking
@@ -238,7 +195,8 @@ class PDRSensorManager(
         return SensorAvailability(
             hasAccelerometer = hasAccelerometer,
             hasGyroscope = hasGyroscope,
-            hasMagnetometer = hasMagnetometer
+            hasMagnetometer = hasMagnetometer,
+            hasRotationVector = hasRotationVector
         )
     }
     
@@ -248,24 +206,21 @@ class PDRSensorManager(
     data class SensorAvailability(
         val hasAccelerometer: Boolean,
         val hasGyroscope: Boolean,
-        val hasMagnetometer: Boolean
+        val hasMagnetometer: Boolean,
+        val hasRotationVector: Boolean
     ) {
         val allSensorsAvailable: Boolean
-            get() = hasAccelerometer && hasGyroscope && hasMagnetometer
+            get() = hasAccelerometer && hasGyroscope && hasMagnetometer && hasRotationVector
     }
     
     /**
      * Handle sensor accuracy changes
      */
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // Removed logging to reduce log spam
-        // Only log if accuracy becomes unreliable
         when (accuracy) {
             SensorManager.SENSOR_STATUS_UNRELIABLE -> {
                 Log.w(TAG, "Sensor accuracy unreliable: ${sensor?.name}")
-                // Could trigger recalibration here
             }
-            // Removed other accuracy level logs to reduce spam
         }
     }
     
