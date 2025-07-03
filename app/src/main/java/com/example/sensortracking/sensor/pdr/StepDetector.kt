@@ -8,10 +8,10 @@ class StepDetector(private val config: PDRConfig) {
     private var lastStepTime: Long = 0
     private var lastMagnitude: Float = 0f
     private var stepCount = 0
-    
+
     // Threshold-based detection
-    private val stepThreshold = 12.0f // m/s²
-    private val stepCooldownMs = 300L // Minimum time between steps
+    private val stepThreshold = config.stepThreshold
+    private val stepCooldownMs = config.stepCooldownMs
 
     fun detectStep(acceleration: FloatArray, timestamp: Long): StepData? {
         val magnitude = calculateMagnitude(acceleration)
@@ -46,6 +46,6 @@ class StepDetector(private val config: PDRConfig) {
     }
 
     fun updateConfig(newConfig: PDRConfig) {
-        // Could update thresholds based on config
+        // Config is already used in detectStep method
     }
 } 

@@ -93,8 +93,8 @@ fun TrackScreen(
         showStartDialog = true
     }
     
-    // Handle errors
-    LaunchedEffect(uiState.isError) {
+    // Handle errors and sensor initialization
+    LaunchedEffect(uiState.isError, uiState.errorMessage) {
         if (uiState.isError && uiState.errorMessage != null) {
             snackbarHostState.showSnackbar(uiState.errorMessage!!)
             viewModel.clearError()

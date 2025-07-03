@@ -1,6 +1,5 @@
 package com.example.sensortracking.sensor.pdr
 
-import android.util.Log
 import com.example.sensortracking.data.HeadingData
 import com.example.sensortracking.data.HeadingSource
 import com.example.sensortracking.data.PDRConfig
@@ -12,7 +11,7 @@ import kotlin.math.sqrt
 /**
  * Heading estimation using Android's rotation vector sensor
  */
-class HeadingEstimator(private val config: PDRConfig) {
+class HeadingEstimator() {
     
     companion object {
         private const val TAG = "HeadingEstimator"
@@ -58,9 +57,9 @@ class HeadingEstimator(private val config: PDRConfig) {
         )
         
         val confidence = if (abs(quaternionMagnitude - 1.0f) < 0.1f) {
-            0.9f // Good quaternion (normalized)
+            0.9f
         } else {
-            0.6f // Acceptable quaternion
+            0.6f
         }
         
         return HeadingData(
@@ -100,9 +99,5 @@ class HeadingEstimator(private val config: PDRConfig) {
     fun reset() {
         hasRotationVector = false
         rotationVector = FloatArray(4)
-    }
-    
-    fun updateConfig(newConfig: PDRConfig) {
-        // No configuration needed yet for rotation vector
     }
 }

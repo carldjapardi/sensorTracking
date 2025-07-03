@@ -54,7 +54,7 @@ class StrideEstimator(private var config: PDRConfig) {
         
         // stride = K * (amplitude)^0.25
         // K is a constant that depends on user characteristics
-        val k = 0.4f // Default constant, can be adjusted based on user characteristics
+        val k = 0.4f
         return k * amplitude.pow(0.25f)
     }
 

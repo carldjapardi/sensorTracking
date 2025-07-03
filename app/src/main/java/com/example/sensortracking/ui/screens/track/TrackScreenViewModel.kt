@@ -64,21 +64,14 @@ class TrackScreenViewModel : ViewModel() {
         
         viewModelScope.launch {
             try {
-                // Initialize PDR processor
                 initializePDRProcessor()
-                
-                // Initialize sensor manager
                 pdrSensorManager = PDRSensorManager(context, pdrProcessor!!)
-                
-                // Initialize sensors
                 val sensorsAvailable = pdrSensorManager!!.initializeSensors()
                 
                 if (sensorsAvailable) {
-                    // Get sensor availability
                     val sensorAvailability = pdrSensorManager!!.getSensorAvailability()
                     
-                    // Update UI state
-                    _uiState.update { 
+                    _uiState.update {
                         it.copy(
                             hasAccelerometer = sensorAvailability.hasAccelerometer,
                             hasGyroscope = sensorAvailability.hasGyroscope,
@@ -86,10 +79,7 @@ class TrackScreenViewModel : ViewModel() {
                             hasRotationVector = sensorAvailability.hasRotationVector,
                         )
                     }
-                    
-                    // Observe PDR data
                     observePDRData()
-                    
                     isInitialized = true
                 } else {
                     _uiState.update { 
@@ -175,12 +165,8 @@ class TrackScreenViewModel : ViewModel() {
     fun newTracking() {
         // Stop current tracking
         onStopTracking()
-        
-        // Reset PDR processor
         pdrProcessor?.reset()
-        
-        // Reset UI state
-        _uiState.update { 
+        _uiState.update {
             it.copy(
                 pdrData = null,
                 isTracking = false,
@@ -213,8 +199,4 @@ class TrackScreenViewModel : ViewModel() {
         pdrSensorManager = null
         pdrProcessor = null
     }
-}
-
-private fun Float.toFixed(digits: Int): String {
-    return "%.${digits}f".format(this)
 }

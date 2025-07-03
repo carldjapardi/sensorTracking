@@ -6,6 +6,8 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.util.Log
+import com.example.sensortracking.data.PDRData
+import com.example.sensortracking.data.Position
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,15 +36,12 @@ class PDRSensorManager(
     
     // PDR data flow
     private val _pdrData = MutableStateFlow(pdrProcessor.getCurrentPDRData())
-    val pdrData: StateFlow<com.example.sensortracking.data.PDRData> = _pdrData.asStateFlow()
+    val pdrData: StateFlow<PDRData> = _pdrData.asStateFlow()
     
     companion object {
         private const val TAG = "PDRSensorManager"
     }
-    
-    /**
-     * Initialize and register sensors
-     */
+
     fun initializeSensors(): Boolean {
         Log.d(TAG, "Initializing sensors...")
         
@@ -107,10 +106,7 @@ class PDRSensorManager(
         
         return allSensorsAvailable
     }
-    
-    /**
-     * Handle sensor events
-     */
+
     override fun onSensorChanged(event: SensorEvent) {
         when (event.sensor.type) {
             Sensor.TYPE_ACCELEROMETER -> {
@@ -132,10 +128,7 @@ class PDRSensorManager(
             }
         }
     }
-    
-    /**
-     * Process sensor data and update PDR
-     */
+
     private fun processSensorData() {
         val timestamp = System.currentTimeMillis()
         
@@ -145,52 +138,32 @@ class PDRSensorManager(
         )
         
         // Update PDR data flow
-        if (pdrResult != null) {
-            _pdrData.value = pdrResult
-        }
+        _pdrData.value = pdrResult
     }
-    
-    /**
-     * Start PDR tracking
-     */
-    fun startTracking(initialPosition: com.example.sensortracking.data.Position) {
+
+    fun startTracking(initialPosition: Position) {
         Log.d(TAG, "Starting PDR tracking at position: $initialPosition")
         pdrProcessor.startTracking(initialPosition)
     }
-    
-    /**
-     * Stop PDR tracking
-     */
+
     fun stopTracking() {
         Log.d(TAG, "Stopping PDR tracking")
         pdrProcessor.stopTracking()
     }
-    
-    /**
-     * Set initial position
-     */
-    fun setInitialPosition(position: com.example.sensortracking.data.Position) {
+
+    fun setInitialPosition(position: Position) {
         pdrProcessor.setInitialPosition(position)
         Log.d(TAG, "Initial position set to: $position")
     }
-    
-    /**
-     * Get current PDR data
-     */
-    fun getCurrentPDRData(): com.example.sensortracking.data.PDRData {
+
+    fun getCurrentPDRData(): PDRData {
         return pdrProcessor.getCurrentPDRData()
     }
-    
-    /**
-     * Get path history
-     */
-    fun getPathHistory(): List<com.example.sensortracking.data.Position> {
+
+    fun getPathHistory(): List<Position> {
         return pdrProcessor.getPathHistory()
     }
-    
-    /**
-     * Check if sensors are available
-     */
+
     fun getSensorAvailability(): SensorAvailability {
         return SensorAvailability(
             hasAccelerometer = hasAccelerometer,
@@ -199,10 +172,7 @@ class PDRSensorManager(
             hasRotationVector = hasRotationVector
         )
     }
-    
-    /**
-     * Sensor availability data class
-     */
+
     data class SensorAvailability(
         val hasAccelerometer: Boolean,
         val hasGyroscope: Boolean,
@@ -223,10 +193,7 @@ class PDRSensorManager(
             }
         }
     }
-    
-    /**
-     * Clean up resources
-     */
+
     fun cleanup() {
         Log.d(TAG, "Cleaning up sensor manager...")
         sensorManager.unregisterListener(this)

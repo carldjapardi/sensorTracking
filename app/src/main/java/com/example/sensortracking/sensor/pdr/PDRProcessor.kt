@@ -23,7 +23,7 @@ class PDRProcessor(
     
     private val stepDetector = StepDetector(config)
     private val strideEstimator = StrideEstimator(config)
-    private val headingEstimator = HeadingEstimator(config)
+    private val headingEstimator = HeadingEstimator()
     
     // Current state
     private var currentPosition = Position(0f, 0f)
@@ -33,15 +33,11 @@ class PDRProcessor(
     private var isTracking = false
     private var lastStepData: StepData? = null
     
-    // Path history
     private val pathHistory = mutableListOf<Position>()
-    private val maxHistorySize = 1000
+    private val maxHistorySize = 200 // Reduced from 1000 to 200
     
-    // Sensor data buffers
-    private var lastAccelerometer: FloatArray? = null
-    private var lastGyroscope: FloatArray? = null
-    private var lastMagnetometer: FloatArray? = null
-    private var lastTimestamp: Long = 0
+    private var lastStrideConfidence = 0f
+    private var lastStrideTimestamp = 0L
     
     /**
      * Area bounds for position validation
@@ -64,23 +60,14 @@ class PDRProcessor(
         }
     }
     
-    /**
-     * Process sensor data and update PDR state
-     */
     fun processSensorData(
         accelerometer: FloatArray,
         gyroscope: FloatArray,
         magnetometer: FloatArray,
         timestamp: Long
-    ): PDRData? {
+    ): PDRData {
         
-        // Always store sensor data for calibration
-        lastAccelerometer = accelerometer.clone()
-        lastGyroscope = gyroscope.clone()
-        lastMagnetometer = magnetometer.clone()
-        lastTimestamp = timestamp
-        
-        // Always update heading estimation for calibration
+        // Always update heading estimation
         currentHeading = headingEstimator.estimateHeading(
             accelerometer, gyroscope, magnetometer, timestamp
         )
@@ -96,6 +83,10 @@ class PDRProcessor(
         if (stepData != null) {
             // Estimate stride length
             val strideData = strideEstimator.estimateStride(accelerometer, timestamp)
+            
+            // Cache stride confidence for later use
+            lastStrideConfidence = strideData.confidence
+            lastStrideTimestamp = timestamp
             
             // Update position
             updatePosition(strideData.length)
@@ -136,19 +127,13 @@ class PDRProcessor(
         }
     }
     
-    /**
-     * Add position to path history
-     */
     private fun addToPathHistory(position: Position) {
         pathHistory.add(position)
         if (pathHistory.size > maxHistorySize) {
             pathHistory.removeAt(0)
         }
     }
-    
-    /**
-     * Get current PDR data
-     */
+
     fun getCurrentPDRData(): PDRData {
         return PDRData(
             position = currentPosition,
@@ -175,19 +160,14 @@ class PDRProcessor(
         confidence += currentHeading.confidence
         count++
         
-        // Stride estimation confidence (if available)
-        lastAccelerometer?.let {
-            val strideData = strideEstimator.estimateStride(it, lastTimestamp)
-            confidence += strideData.confidence
+        if (lastStrideTimestamp > 0) {
+            confidence += lastStrideConfidence
             count++
         }
         
         return if (count > 0) confidence / count else 0f
     }
-    
-    /**
-     * Start tracking from a specific position
-     */
+
     fun startTracking(initialPosition: Position) {
         // Validate initial position
         currentPosition = if (areaBounds.contains(initialPosition)) {
@@ -206,6 +186,10 @@ class PDRProcessor(
         totalDistance = 0f
         pathHistory.clear()
         pathHistory.add(currentPosition)
+        
+        // Reset cached values
+        lastStrideConfidence = 0f
+        lastStrideTimestamp = 0L
         
         isTracking = true
     }
@@ -229,9 +213,6 @@ class PDRProcessor(
 
     fun getPathHistory(): List<Position> = pathHistory.toList()
 
-    /**
-     * Update rotation vector data in heading estimator
-     */
     fun updateRotationVector(rotationVector: FloatArray) {
         headingEstimator.updateRotationVector(rotationVector)
     }
@@ -239,7 +220,6 @@ class PDRProcessor(
     fun updateConfig(newConfig: PDRConfig) {
         stepDetector.updateConfig(newConfig)
         strideEstimator.updateConfig(newConfig)
-        headingEstimator.updateConfig(newConfig)
     }
 
     fun reset() {
@@ -255,10 +235,9 @@ class PDRProcessor(
         lastStepData = null
         pathHistory.clear()
         
-        lastAccelerometer = null
-        lastGyroscope = null
-        lastMagnetometer = null
-        lastTimestamp = 0
+        // Reset cached values
+        lastStrideConfidence = 0f
+        lastStrideTimestamp = 0L
     }
     
     /**

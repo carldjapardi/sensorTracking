@@ -16,18 +16,12 @@ data class Position(
     }
 }
 
-/**
- * Represents step detection data
- */
 data class StepData(
     val timestamp: Long,
     val magnitude: Float,
     val confidence: Float
 )
 
-/**
- * Represents stride length estimation
- */
 data class StrideData(
     val length: Float,
     val confidence: Float
@@ -42,16 +36,10 @@ data class HeadingData(
     val source: HeadingSource
 )
 
-/**
- * Sources for heading estimation
- */
 enum class HeadingSource {
     FUSED  // Sensor fusion (rotation vector)
 }
 
-/**
- * Complete PDR tracking data
- */
 data class PDRData(
     val position: Position,
     val stepCount: Int,
@@ -66,9 +54,7 @@ data class PDRData(
  * Configuration for PDR algorithms
  */
 data class PDRConfig(
-    val stepThreshold: Float = 1.8f,
-    val stepCooldownMs: Long = 500,
-    val defaultStrideLength: Float = 0.7f,
-    val autoCorrelationWindowSize: Int = 50,
-    val lowPassFilterAlpha: Float = 0.8f
+    val stepThreshold: Float = 10.0f,
+    val stepCooldownMs: Long = 350L,
+    val defaultStrideLength: Float = 0.7f
 ) 
