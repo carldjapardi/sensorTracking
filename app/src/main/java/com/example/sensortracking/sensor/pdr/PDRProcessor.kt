@@ -23,7 +23,7 @@ class PDRProcessor(
     
     private val stepDetector = StepDetector(config)
     private val strideEstimator = StrideEstimator(config)
-    private val headingEstimator = HeadingEstimator()
+    private val headingEstimator = HeadingEstimator(config)
     
     // Current state
     private var currentPosition = Position(0f, 0f)
@@ -142,7 +142,8 @@ class PDRProcessor(
             currentHeading = currentHeading,
             lastStep = lastStepData,
             isTracking = isTracking,
-            confidence = calculateOverallConfidence()
+            confidence = calculateOverallConfidence(),
+            config = config
         )
     }
 
@@ -218,8 +219,10 @@ class PDRProcessor(
     }
 
     fun updateConfig(newConfig: PDRConfig) {
+        // Update all components with new config
         stepDetector.updateConfig(newConfig)
         strideEstimator.updateConfig(newConfig)
+        headingEstimator.updateConfig(newConfig)
     }
 
     fun reset() {

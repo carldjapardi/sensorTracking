@@ -11,7 +11,7 @@ import kotlin.math.sqrt
 /**
  * Heading estimation using Android's rotation vector sensor
  */
-class HeadingEstimator() {
+class HeadingEstimator(private val config: PDRConfig) {
     
     companion object {
         private const val TAG = "HeadingEstimator"
@@ -99,5 +99,10 @@ class HeadingEstimator() {
     fun reset() {
         hasRotationVector = false
         rotationVector = FloatArray(4)
+    }
+    
+    fun updateConfig(newConfig: PDRConfig) {
+        // Currently no config parameters needed for rotation vector
+        // Could be extended for filtering or calibration parameters
     }
 }

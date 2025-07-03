@@ -47,14 +47,15 @@ data class PDRData(
     val currentHeading: HeadingData,
     val lastStep: StepData?,
     val isTracking: Boolean = false,
-    val confidence: Float = 0f
+    val confidence: Float = 0f,
+    val config: PDRConfig = PDRConfig()
 )
 
 /**
  * Configuration for PDR algorithms
  */
 data class PDRConfig(
-    val stepThreshold: Float = 10.0f,
-    val stepCooldownMs: Long = 350L,
-    val defaultStrideLength: Float = 0.7f
+    val stepThreshold: Float = 12.0f, //12 m/s-2
+    val stepCooldownMs: Long = 450L, //450ms
+    val defaultStrideLength: Float = 0.7f //0.7m
 ) 

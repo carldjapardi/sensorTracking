@@ -4,7 +4,7 @@ import com.example.sensortracking.data.StepData
 import com.example.sensortracking.data.PDRConfig
 import kotlin.math.sqrt
 
-class StepDetector(private val config: PDRConfig) {
+class StepDetector(private var config: PDRConfig) {
     private var lastStepTime: Long = 0
     private var lastMagnitude: Float = 0f
     private var stepCount = 0
