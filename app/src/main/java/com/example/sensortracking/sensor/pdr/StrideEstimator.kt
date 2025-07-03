@@ -5,10 +5,6 @@ import com.example.sensortracking.data.PDRConfig
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-/**
- * Stride length estimation using Weinberg's algorithm
- * Based on: Weinberg, H. "Using the ADXL202 in pedometer and personal navigation applications"
- */
 class StrideEstimator(private var config: PDRConfig) {
     
     private var accelerationBuffer = mutableListOf<Float>()
@@ -16,9 +12,6 @@ class StrideEstimator(private var config: PDRConfig) {
     private var lastStrideTime: Long = 0
     private val maxHistorySize = 10
 
-    /**
-     * Estimate stride length using Weinberg's method
-     */
     fun estimateStride(acceleration: FloatArray, timestamp: Long): StrideData {
         val magnitude = calculateMagnitude(acceleration)
         
@@ -65,16 +58,10 @@ class StrideEstimator(private var config: PDRConfig) {
         return k * amplitude.pow(0.25f)
     }
 
-    /**
-     * Calculate acceleration magnitude
-     */
     private fun calculateMagnitude(acceleration: FloatArray): Float {
         return sqrt(acceleration[0].pow(2) + acceleration[1].pow(2) + acceleration[2].pow(2))
     }
-    
-    /**
-     * Calculate variance of acceleration buffer
-     */
+
     private fun calculateVariance(buffer: List<Float>): Float {
         if (buffer.isEmpty()) return 0f
         
@@ -82,10 +69,7 @@ class StrideEstimator(private var config: PDRConfig) {
         val variance = buffer.map { (it - mean).pow(2) }.average().toFloat()
         return variance
     }
-    
-    /**
-     * Calculate amplitude (max - min) of acceleration buffer
-     */
+
     private fun calculateAmplitude(buffer: List<Float>): Float {
         if (buffer.isEmpty()) return 0f
         
@@ -93,10 +77,7 @@ class StrideEstimator(private var config: PDRConfig) {
         val min = buffer.minOrNull() ?: 0f
         return max - min
     }
-    
-    /**
-     * Calculate confidence based on signal quality
-     */
+
     private fun calculateConfidence(buffer: List<Float>): Float {
         if (buffer.size < 10) return 0.5f
         
@@ -115,18 +96,12 @@ class StrideEstimator(private var config: PDRConfig) {
         return confidence.coerceIn(0f, 1f)
     }
 
-    /**
-     * Reset estimator state
-     */
     fun reset() {
         accelerationBuffer.clear()
         strideHistory.clear()
         lastStrideTime = 0
     }
-    
-    /**
-     * Update configuration
-     */
+
     fun updateConfig(newConfig: PDRConfig) {
         config = newConfig
     }

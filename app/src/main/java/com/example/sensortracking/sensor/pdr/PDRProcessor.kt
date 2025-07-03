@@ -1,13 +1,16 @@
 package com.example.sensortracking.sensor.pdr
 
-import android.util.Log
-import com.example.sensortracking.data.*
+import com.example.sensortracking.data.HeadingData
+import com.example.sensortracking.data.HeadingSource
+import com.example.sensortracking.data.PDRConfig
+import com.example.sensortracking.data.PDRData
+import com.example.sensortracking.data.Position
+import com.example.sensortracking.data.StepData
 import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Main PDR processor that orchestrates all components
- * Manages step detection, stride estimation, heading estimation, and position tracking
+ * Main PDR processor manages step detection, stride estimation, heading estimation, and position tracking
  */
 class PDRProcessor(
     private val config: PDRConfig = PDRConfig(),
@@ -157,10 +160,7 @@ class PDRProcessor(
             confidence = calculateOverallConfidence()
         )
     }
-    
-    /**
-     * Calculate overall confidence based on all components
-     */
+
     private fun calculateOverallConfidence(): Float {
         var confidence = 0f
         var count = 0
@@ -209,10 +209,7 @@ class PDRProcessor(
         
         isTracking = true
     }
-    
-    /**
-     * Stop tracking
-     */
+
     fun stopTracking() {
         isTracking = false
     }
@@ -229,34 +226,19 @@ class PDRProcessor(
         pathHistory.clear()
         pathHistory.add(currentPosition)
     }
-    
-    /**
-     * Get path history
-     */
+
     fun getPathHistory(): List<Position> = pathHistory.toList()
-    
-    /**
-     * Check if magnetometer is calibrated
-     */
+
     fun isMagnetometerCalibrated(): Boolean = headingEstimator.isCalibrated()
-    
-    /**
-     * Get magnetometer calibration progress
-     */
+
     fun getMagnetometerCalibrationProgress(): Float = headingEstimator.getCalibrationProgress()
-    
-    /**
-     * Update configuration
-     */
+
     fun updateConfig(newConfig: PDRConfig) {
         stepDetector.updateConfig(newConfig)
         strideEstimator.updateConfig(newConfig)
         headingEstimator.updateConfig(newConfig)
     }
-    
-    /**
-     * Reset all components and state
-     */
+
     fun reset() {
         stepDetector.reset()
         strideEstimator.reset()
