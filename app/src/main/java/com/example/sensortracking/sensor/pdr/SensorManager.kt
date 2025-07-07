@@ -24,8 +24,6 @@ class PDRSensorManager(
     
     // Sensor state
     private var accelerometer: FloatArray = FloatArray(3)
-    private var gyroscope: FloatArray = FloatArray(3)
-    private var magnetometer: FloatArray = FloatArray(3)
     private var rotationVector: FloatArray = FloatArray(4)
     
     // Sensor availability
@@ -113,14 +111,6 @@ class PDRSensorManager(
                 System.arraycopy(event.values, 0, accelerometer, 0, 3)
                 processSensorData()
             }
-            Sensor.TYPE_GYROSCOPE -> {
-                System.arraycopy(event.values, 0, gyroscope, 0, 3)
-                processSensorData()
-            }
-            Sensor.TYPE_MAGNETIC_FIELD -> {
-                System.arraycopy(event.values, 0, magnetometer, 0, 3)
-                processSensorData()
-            }
             Sensor.TYPE_ROTATION_VECTOR -> {
                 System.arraycopy(event.values, 0, rotationVector, 0, 4)
                 pdrProcessor.updateRotationVector(rotationVector)
@@ -134,7 +124,7 @@ class PDRSensorManager(
         
         // Process with PDR
         val pdrResult = pdrProcessor.processSensorData(
-            accelerometer, gyroscope, magnetometer, timestamp
+            accelerometer, timestamp
         )
         
         // Update PDR data flow

@@ -2,7 +2,6 @@ package com.example.sensortracking.ui.screens.track
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,14 +24,12 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -48,10 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,7 +53,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,19 +65,18 @@ fun TrackScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scrollState = rememberScrollState()
-    
-    var showNewTrackingDialog by remember { mutableStateOf(false) }
+
     var showNewTrackingConfirmDialog by remember { mutableStateOf(false) }
     var showSaveTrackingDialog by remember { mutableStateOf(false) }
     var showAreaDialog by remember { mutableStateOf(false) }
     var tempLength by remember { mutableStateOf(uiState.area.length.toInt().toString()) }
     var tempWidth by remember { mutableStateOf(uiState.area.width.toInt().toString()) }
-    
+
     // Initialize sensors when screen is first loaded
     LaunchedEffect(Unit) {
         viewModel.initializeSensors(context)
     }
-    
+
     // Show start dialog every time showStartDialogOnNav changes
     var lastDialogTrigger by remember { mutableStateOf(-1) }
     var showStartDialog by remember { mutableStateOf(false) }
@@ -92,7 +84,7 @@ fun TrackScreen(
         lastDialogTrigger = showStartDialogOnNav
         showStartDialog = true
     }
-    
+
     // Handle errors and sensor initialization
     LaunchedEffect(uiState.isError, uiState.errorMessage) {
         if (uiState.isError && uiState.errorMessage != null) {
@@ -100,8 +92,7 @@ fun TrackScreen(
             viewModel.clearError()
         }
     }
-    
-    // Show initial position dialog when needed
+
     if (uiState.showInitialPositionDialog) {
         InitialPositionDialog(
             area = uiState.area,
@@ -110,111 +101,46 @@ fun TrackScreen(
             onDismiss = { viewModel.hideInitialPositionDialog() }
         )
     }
-    
-    // Confirmation dialog for new tracking
+
     if (showNewTrackingConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = { showNewTrackingConfirmDialog = false },
-            title = { Text("Start New Tracking") },
-            text = { Text("Do you want to save the current tracking before starting a new one?") },
-            confirmButton = {
-                Button(onClick = {
-                    showNewTrackingConfirmDialog = false
-                    viewModel.saveTracking()
-                    viewModel.newTracking()
-                }) { Text("Save and New Tracking") }
-            },
-            dismissButton = {
-                Button(onClick = { showNewTrackingConfirmDialog = false }) { Text("Cancel") }
-            }
-        )
+        NewTrackingConfirmDialog(
+            viewModel = viewModel,
+            onDismiss = { showNewTrackingConfirmDialog = false })
     }
-    
-    // Dialog for saving current tracking
+
     if (showSaveTrackingDialog) {
-        AlertDialog(
-            onDismissRequest = { showSaveTrackingDialog = false },
-            title = { Text("Save Tracking") },
-            text = { Text("Do you want to stop tracking and save?") },
-            confirmButton = {
-                Button(onClick = {
-                    showSaveTrackingDialog = false
-                    viewModel.saveTracking()
-                    viewModel.onStopTracking()
-                }) { Text("Stop Tracking and Save") }
-            },
-            dismissButton = {
-                Button(onClick = { showSaveTrackingDialog = false }) { Text("Cancel") }
-            }
+        ShowSaveTrackingAlertDialog(
+            viewModel = viewModel,
+            onDismiss = { showSaveTrackingDialog = false }
         )
     }
-    
-    // Dialog for selecting floor plan or no floor plan
+
     if (showStartDialog) {
-        AlertDialog(
-            onDismissRequest = {},
-            title = { Text("Start Tracking") },
-            text = {
-                Column {
-                    Text("Choose how to start tracking:")
-                    Spacer(Modifier.height(8.dp))
-                    Button(onClick = { /* TODO: Select floor plan */ }) {
-                        Text("Select Floor Plan")
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Button(onClick = { /* TODO: Upload new floor plan */ }) {
-                        Text("Upload New Floor Plan")
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Button(onClick = {
-                        showStartDialog = false
-                        showAreaDialog = true
-                    }) {
-                        Text("No Floor Plan")
-                    }
-                }
+        StartTrackingDialog(
+            onSelectFloorPlan = { /* TODO: Select floor plan */ },
+            onUploadFloorPlan = { /* TODO: Upload new floor plan */ },
+            onNoFloorPlan = {
+                showStartDialog = false
+                showAreaDialog = true
             },
-            confirmButton = {},
-            dismissButton = {}
+            onDismiss = { showStartDialog = false }
         )
     }
-    
-    // Dialog for entering area if no floor plan (integers only)
+
     if (showAreaDialog) {
-        AlertDialog(
-            onDismissRequest = {},
-            title = { Text("Specify Area Dimensions") },
-            text = {
-                Column {
-                    Text("Enter Length (meters):")
-                    OutlinedTextField(
-                        value = tempLength,
-                        onValueChange = { v ->
-                            if (v.all { it.isDigit() } && v.isNotEmpty()) tempLength = v
-                        },
-                        singleLine = true
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text("Enter Width (meters):")
-                    OutlinedTextField(
-                        value = tempWidth,
-                        onValueChange = { v ->
-                            if (v.all { it.isDigit() } && v.isNotEmpty()) tempWidth = v
-                        },
-                        singleLine = true
-                    )
-                }
+        AreaDimensionsDialog(
+            tempLength = tempLength,
+            tempWidth = tempWidth,
+            onLengthChange = { tempLength = it },
+            onWidthChange = { tempWidth = it },
+            onConfirm = {
+                val lengthInt = tempLength.toIntOrNull() ?: 1
+                val widthInt = tempWidth.toIntOrNull() ?: 1
+                viewModel.setArea(lengthInt.toFloat(), widthInt.toFloat())
+                showAreaDialog = false
+                viewModel.showInitialPositionDialog()
             },
-            confirmButton = {
-                Button(onClick = {
-                    val lengthInt = tempLength.toIntOrNull() ?: 1
-                    val widthInt = tempWidth.toIntOrNull() ?: 1
-                    viewModel.setArea(lengthInt.toFloat(), widthInt.toFloat())
-                    showAreaDialog = false
-                    viewModel.showInitialPositionDialog()
-                }) { Text("OK") }
-            },
-            dismissButton = {}
+            onDismiss = { showAreaDialog = false }
         )
     }
     
@@ -241,7 +167,7 @@ fun TrackScreen(
                 .padding(innerPadding)
                 .verticalScroll(scrollState)
         ) {
-            // 2. Grid/Floor Plan Canvas
+            // 1. Grid/Floor Plan Canvas
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -263,7 +189,7 @@ fun TrackScreen(
                 )
             }
 
-            // 3. Info Row: New Tracking, Save Tracking, Zoom, Area
+            // 2. Info Row: New Tracking, Save Tracking, Zoom, Area
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -273,13 +199,13 @@ fun TrackScreen(
             ) {
                 IconButton(
                     onClick = { showNewTrackingConfirmDialog = true },
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(30.dp)
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "New Tracking", modifier = Modifier.size(28.dp))
                 }
                 IconButton(
                     onClick = { showSaveTrackingDialog = true },
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(30.dp)
                 ) {
                     Icon(Icons.Default.Save, contentDescription = "Save Tracking", modifier = Modifier.size(28.dp))
                 }
@@ -293,7 +219,7 @@ fun TrackScreen(
                             val newZoom = min(uiState.zoom * 1.2f, maxZoom)
                             viewModel.onZoomChange(newZoom)
                         },
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(30.dp)
                     ) {
                         Icon(Icons.Filled.ZoomIn, contentDescription = "Zoom In", modifier = Modifier.size(30.dp))
                     }
@@ -302,14 +228,14 @@ fun TrackScreen(
                             val newZoom = max(uiState.zoom / 1.2f, minZoom)
                             viewModel.onZoomChange(newZoom)
                         },
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(30.dp)
                     ) {
                         Icon(Icons.Filled.ZoomOut, contentDescription = "Zoom Out", modifier = Modifier.size(30.dp))
                     }
                 }
             }
 
-            // 4. Action Buttons: Start Tracking, Scan Barcode
+            // 3. Action Buttons: Start Tracking, Scan Barcode
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -370,214 +296,3 @@ fun TrackScreen(
         }
     }
 }
-
-@Composable
-fun InitialPositionDialog(
-    area: Area,
-    initialPosition: InitialPosition,
-    onPositionSet: (Float, Float) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var xPosition by remember { mutableStateOf(initialPosition.x.toString()) }
-    var yPosition by remember { mutableStateOf(initialPosition.y.toString()) }
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Set Initial Position") },
-        text = {
-            Column {
-                Text("Enter your starting position within the area (${area.length.toInt()}m x ${area.width.toInt()}m):")
-                Spacer(Modifier.height(16.dp))
-                Text("X Position (0-${area.length.toInt()}m):")
-                OutlinedTextField(
-                    value = xPosition,
-                    onValueChange = { xPosition = it },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(8.dp))
-                Text("Y Position (0-${area.width.toInt()}m):")
-                OutlinedTextField(
-                    value = yPosition,
-                    onValueChange = { yPosition = it },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val x = xPosition.toFloatOrNull() ?: 0f
-                    val y = yPosition.toFloatOrNull() ?: 0f
-                    onPositionSet(x, y)
-                }
-            ) {
-                Text("Set Position")
-            }
-        },
-        dismissButton = {
-            Button(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-}
-
-@Composable
-fun CombinedPDRDataDisplay(uiState: TrackScreenUiState, viewModel: TrackScreenViewModel) {
-    Column(modifier = Modifier.padding(12.dp)) {
-        // Position and Heading
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text("Position:", style = MaterialTheme.typography.bodyMedium)
-                Text("X: ${uiState.currentPosition.x.toFixed(2)}m", style = MaterialTheme.typography.bodySmall)
-                Text("Y: ${uiState.currentPosition.y.toFixed(2)}m", style = MaterialTheme.typography.bodySmall)
-            }
-            Column {
-                Text("Heading:", style = MaterialTheme.typography.bodyMedium)
-                Text("${uiState.currentHeading.toFixed(1)}°", style = MaterialTheme.typography.bodySmall)
-            }
-        }
-        
-        Spacer(Modifier.height(8.dp))
-        
-        // Steps, Distance, and Confidence
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text("Steps:", style = MaterialTheme.typography.bodyMedium)
-                Text("${uiState.stepCount}", style = MaterialTheme.typography.bodySmall)
-            }
-            Column {
-                Text("Distance:", style = MaterialTheme.typography.bodyMedium)
-                Text("${uiState.totalDistance.toFixed(2)}m", style = MaterialTheme.typography.bodySmall)
-            }
-            Column {
-                Text("Confidence:", style = MaterialTheme.typography.bodySmall)
-                Text("${(uiState.confidence * 100).toFixed(0)}%", style = MaterialTheme.typography.bodySmall)
-            }
-        }
-        
-        // Sensor availability
-        Spacer(Modifier.height(8.dp))
-        Text("Sensors:", style = MaterialTheme.typography.bodyMedium)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Text("Acc: ${if (uiState.hasAccelerometer) "✓" else "✗"}", style = MaterialTheme.typography.bodySmall)
-            Text("Gyro: ${if (uiState.hasGyroscope) "✓" else "✗"}", style = MaterialTheme.typography.bodySmall)
-            Text("Mag: ${if (uiState.hasMagnetometer) "✓" else "✗"}", style = MaterialTheme.typography.bodySmall)
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Text("RotVec: ${if (uiState.hasRotationVector) "✓" else "✗"}", style = MaterialTheme.typography.bodySmall)
-        }
-    }
-}
-
-@Composable
-fun GridFloorPlanArea(
-    zoom: Float,
-    onZoomChange: (Float) -> Unit,
-    userPosition: com.example.sensortracking.data.Position,
-    floorPlan: Any?,
-    area: Area,
-    pathHistory: List<com.example.sensortracking.data.Position> = emptyList()
-) {
-    val horizontalBoxes = area.length.roundToInt().coerceAtLeast(1)
-    val verticalBoxes = area.width.roundToInt().coerceAtLeast(1)
-    
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(zoom) {
-                detectTransformGestures { _, _, zoomChange, _ ->
-                    val newZoom = (zoom * zoomChange).coerceIn(0.0f, 3.0f)
-                    onZoomChange(newZoom)
-                }
-            },
-        contentAlignment = Alignment.Center
-    ) {
-        // Draw grid using Canvas, apply zoom only
-        androidx.compose.foundation.Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer {
-                    scaleX = zoom
-                    scaleY = zoom
-                }
-        ) {
-            // Calculate square cell size
-            val cellSize = minOf(size.width / horizontalBoxes, size.height / verticalBoxes)
-            val gridWidth = cellSize * horizontalBoxes
-            val gridHeight = cellSize * verticalBoxes
-            val startX = (size.width - gridWidth) / 2f
-            val startY = (size.height - gridHeight) / 2f
-            
-            // Draw grid lines
-            for (i in 0..horizontalBoxes) {
-                val x = startX + i * cellSize
-                drawLine(
-                    color = Color.Black,
-                    start = Offset(x, startY),
-                    end = Offset(x, startY + gridHeight),
-                    strokeWidth = 2f
-                )
-            }
-            for (j in 0..verticalBoxes) {
-                val y = startY + j * cellSize
-                drawLine(
-                    color = Color.Black,
-                    start = Offset(startX, y),
-                    end = Offset(startX + gridWidth, y),
-                    strokeWidth = 2f
-                )
-            }
-            
-            // Draw path history
-            if (pathHistory.size > 1) {
-                for (i in 1 until pathHistory.size) {
-                    val prev = pathHistory[i - 1]
-                    val curr = pathHistory[i]
-                    
-                    val prevX = startX + (prev.x / area.length) * gridWidth
-                    val prevY = startY + (prev.y / area.width) * gridHeight
-                    val currX = startX + (curr.x / area.length) * gridWidth
-                    val currY = startY + (curr.y / area.width) * gridHeight
-                    
-                    drawLine(
-                        color = Color.Blue,
-                        start = Offset(prevX, prevY),
-                        end = Offset(currX, currY),
-                        strokeWidth = 3f
-                    )
-                }
-            }
-            
-            // Draw current position
-            val posX = startX + (userPosition.x / area.length) * gridWidth
-            val posY = startY + (userPosition.y / area.width) * gridHeight
-            
-            // Draw position indicator
-            drawCircle(
-                color = Color.Red,
-                radius = 8f,
-                center = Offset(posX, posY)
-            )
-        }
-    }
-}
-
-private fun Float.toFixed(digits: Int): String {
-    return "%.${digits}f".format(this)
-}
-
