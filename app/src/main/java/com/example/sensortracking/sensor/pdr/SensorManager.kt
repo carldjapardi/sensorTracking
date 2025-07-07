@@ -15,14 +15,11 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * Manages Android sensors and feeds data to PDR processor
  */
-class PDRSensorManager(
-    private val context: Context,
-    private val pdrProcessor: PDRProcessor
-) : SensorEventListener {
-    
+class PDRSensorManager(private val context: Context, private val pdrProcessor: PDRProcessor) : SensorEventListener {
     private val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     
-    // Sensor state
+    // Only using accelerometer and rotation vector for PDR
+    // Rotation vector is used for heading and will initialize gyroscope and magnetometer
     private var accelerometer: FloatArray = FloatArray(3)
     private var rotationVector: FloatArray = FloatArray(4)
     
@@ -54,55 +51,25 @@ class PDRSensorManager(
         hasGyroscope = gyroscopeSensor != null
         hasMagnetometer = magnetometerSensor != null
         hasRotationVector = rotationVectorSensor != null
-        
-        if (hasAccelerometer) {
-            sensorManager.registerListener(
-                this, 
-                accelerometerSensor, 
-                SensorManager.SENSOR_DELAY_GAME
-            )
-            Log.d(TAG, "Accelerometer registered")
-        } else {
-            Log.e(TAG, "Accelerometer not available")
-        }
-        
-        if (hasGyroscope) {
-            sensorManager.registerListener(
-                this, 
-                gyroscopeSensor, 
-                SensorManager.SENSOR_DELAY_GAME
-            )
-            Log.d(TAG, "Gyroscope registered")
-        } else {
-            Log.e(TAG, "Gyroscope not available")
-        }
-        
-        if (hasMagnetometer) {
-            sensorManager.registerListener(
-                this, 
-                magnetometerSensor, 
-                SensorManager.SENSOR_DELAY_GAME
-            )
-            Log.d(TAG, "Magnetometer registered")
-        } else {
-            Log.e(TAG, "Magnetometer not available")
-        }
-        
-        if (hasRotationVector) {
-            sensorManager.registerListener(
-                this,
-                rotationVectorSensor,
-                SensorManager.SENSOR_DELAY_GAME
-            )
-            Log.d(TAG, "Rotation Vector sensor registered")
-        } else {
-            Log.e(TAG, "Rotation Vector sensor not available")
-        }
-        
+
+        registerSensorIfAvailable(hasAccelerometer, "Accelerometer", accelerometerSensor)
+        registerSensorIfAvailable(hasGyroscope, "Gyroscope", gyroscopeSensor)
+        registerSensorIfAvailable(hasMagnetometer, "Magnetometer", magnetometerSensor)
+        registerSensorIfAvailable(hasRotationVector, "Rotation Vector", rotationVectorSensor)
+
         val allSensorsAvailable = hasAccelerometer && hasGyroscope && hasMagnetometer && hasRotationVector
         Log.d(TAG, "Sensor initialization complete. All sensors available: $allSensorsAvailable")
         
         return allSensorsAvailable
+    }
+
+    private fun registerSensorIfAvailable(sensorAvailable: Boolean, sensorName: String, sensorType: Sensor?) {
+        if (sensorAvailable) {
+            sensorManager.registerListener(this, sensorType, SensorManager.SENSOR_DELAY_GAME)
+            Log.d(TAG, "$sensorName registered")
+        } else {
+            Log.e(TAG, "$sensorName not available")
+        }
     }
 
     override fun onSensorChanged(event: SensorEvent) {
@@ -146,9 +113,9 @@ class PDRSensorManager(
         Log.d(TAG, "Initial position set to: $position")
     }
 
-    fun getCurrentPDRData(): PDRData {
-        return pdrProcessor.getCurrentPDRData()
-    }
+//    fun getCurrentPDRData(): PDRData {
+//        return pdrProcessor.getCurrentPDRData()
+//    }
 
     fun getPathHistory(): List<Position> {
         return pdrProcessor.getPathHistory()

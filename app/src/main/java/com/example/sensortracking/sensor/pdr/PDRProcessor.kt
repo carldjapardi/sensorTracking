@@ -1,7 +1,6 @@
 package com.example.sensortracking.sensor.pdr
 
 import com.example.sensortracking.data.HeadingData
-import com.example.sensortracking.data.HeadingSource
 import com.example.sensortracking.data.PDRConfig
 import com.example.sensortracking.data.PDRData
 import com.example.sensortracking.data.Position
@@ -12,22 +11,15 @@ import kotlin.math.sin
 /**
  * Main PDR processor manages step detection, stride estimation, heading estimation, and position tracking
  */
-class PDRProcessor(
-    private val config: PDRConfig = PDRConfig(),
-    private val areaBounds: AreaBounds
-) {
-    
-    companion object {
-        private const val TAG = "PDRProcessor"
-    }
-    
+class PDRProcessor(private val config: PDRConfig = PDRConfig(), private val areaBounds: AreaBounds) {
+    // initializing components for PDR
     private val stepDetector = StepDetector(config)
     private val strideEstimator = StrideEstimator(config)
     private val headingEstimator = HeadingEstimator(config)
     
     // Current state
     private var currentPosition = Position(0f, 0f)
-    private var currentHeading = HeadingData(0f, 0f, HeadingSource.FUSED)
+    private var currentHeading = HeadingData(0f, 0f)
     private var stepCount = 0
     private var totalDistance = 0f
     private var isTracking = false
@@ -39,15 +31,8 @@ class PDRProcessor(
     private var lastStrideConfidence = 0f
     private var lastStrideTimestamp = 0L
     
-    /**
-     * Area bounds for position validation
-     */
-    data class AreaBounds(
-        val minX: Float,
-        val maxX: Float,
-        val minY: Float,
-        val maxY: Float
-    ) {
+    // Area bounds for position validation
+    data class AreaBounds(val minX: Float, val maxX: Float, val minY: Float, val maxY: Float) {
         fun contains(position: Position): Boolean {
             return position.x in minX..maxX && position.y in minY..maxY
         }
@@ -60,13 +45,9 @@ class PDRProcessor(
         }
     }
     
-    fun processSensorData(
-        accelerometer: FloatArray,
-        timestamp: Long
-    ): PDRData {
+    fun processSensorData(accelerometer: FloatArray, timestamp: Long): PDRData {
         currentHeading = headingEstimator.estimateHeading()
         
-        // Only process steps and update position if tracking
         if (!isTracking) {
             return getCurrentPDRData()
         }
@@ -80,23 +61,19 @@ class PDRProcessor(
             lastStrideConfidence = strideData.confidence
             lastStrideTimestamp = timestamp
             
-            // Update position
             updatePosition(strideData.length)
             
-            // Update state
             stepCount++
             totalDistance += strideData.length
             lastStepData = stepData
             
             addToPathHistory(currentPosition)
         }
-        
+
         return getCurrentPDRData()
     }
     
-    /**
-     * Update position based on stride length and heading
-     */
+    // Update position based on stride length and heading
     private fun updatePosition(strideLength: Float) {
         val headingRadians = Math.toRadians(currentHeading.heading.toDouble())
         
@@ -126,14 +103,9 @@ class PDRProcessor(
 
     fun getCurrentPDRData(): PDRData {
         return PDRData(
-            position = currentPosition,
-            stepCount = stepCount,
-            totalDistance = totalDistance,
-            currentHeading = currentHeading,
-            lastStep = lastStepData,
-            isTracking = isTracking,
-            confidence = calculateOverallConfidence(),
-            config = config
+            position = currentPosition, stepCount = stepCount, totalDistance = totalDistance,
+            currentHeading = currentHeading, lastStep = lastStepData, isTracking = isTracking,
+            confidence = calculateOverallConfidence(), config = config
         )
     }
 
@@ -143,29 +115,27 @@ class PDRProcessor(
         
         lastStepData?.let {
             confidence += it.confidence
-            count++
+            count += 1
         }
         
         confidence += currentHeading.confidence
-        count++
+        count += 1
         
         if (lastStrideTimestamp > 0) {
             confidence += lastStrideConfidence
-            count++
+            count += 1
         }
-        
-        return if (count > 0) confidence / count else 0f
+
+        return confidence / count
     }
 
     fun startTracking(initialPosition: Position) {
-        // Validate initial position
         currentPosition = if (areaBounds.contains(initialPosition)) {
             initialPosition
         } else {
             areaBounds.clamp(initialPosition)
         }
         
-        // Reset all components
         stepDetector.reset()
         strideEstimator.reset()
         headingEstimator.reset()
@@ -186,10 +156,7 @@ class PDRProcessor(
     fun stopTracking() {
         isTracking = false
     }
-    
-    /**
-     * Set initial position (without starting tracking)
-     */
+
     fun setInitialPosition(position: Position) {
         currentPosition = if (areaBounds.contains(position)) {
             position
@@ -207,7 +174,6 @@ class PDRProcessor(
     }
 
     fun updateConfig(newConfig: PDRConfig) {
-        // Update all components with new config
         stepDetector.updateConfig(newConfig)
         strideEstimator.updateConfig(newConfig)
         headingEstimator.updateConfig(newConfig)
@@ -219,7 +185,7 @@ class PDRProcessor(
         headingEstimator.reset()
         
         currentPosition = Position(0f, 0f)
-        currentHeading = HeadingData(0f, 0f, HeadingSource.FUSED)
+        currentHeading = HeadingData(0f, 0f)
         stepCount = 0
         totalDistance = 0f
         isTracking = false
@@ -230,29 +196,4 @@ class PDRProcessor(
         lastStrideConfidence = 0f
         lastStrideTimestamp = 0L
     }
-    
-    /**
-     * Get current position
-     */
-    fun getCurrentPosition(): Position = currentPosition
-    
-    /**
-     * Get current heading
-     */
-    fun getCurrentHeading(): HeadingData = currentHeading
-    
-    /**
-     * Get step count
-     */
-    fun getStepCount(): Int = stepCount
-    
-    /**
-     * Get total distance
-     */
-    fun getTotalDistance(): Float = totalDistance
-    
-    /**
-     * Check if currently tracking
-     */
-    fun isCurrentlyTracking(): Boolean = isTracking
 } 

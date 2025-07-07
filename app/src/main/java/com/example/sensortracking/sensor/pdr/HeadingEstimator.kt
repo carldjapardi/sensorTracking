@@ -1,7 +1,6 @@
 package com.example.sensortracking.sensor.pdr
 
 import com.example.sensortracking.data.HeadingData
-import com.example.sensortracking.data.HeadingSource
 import com.example.sensortracking.data.PDRConfig
 import kotlin.math.abs
 import kotlin.math.asin
@@ -31,7 +30,6 @@ class HeadingEstimator(private val config: PDRConfig) {
             return HeadingData(
                 heading = 0f,
                 confidence = 0f,
-                source = HeadingSource.FUSED
             )
         }
         return estimateHeadingFromRotationVector()
@@ -59,7 +57,6 @@ class HeadingEstimator(private val config: PDRConfig) {
         return HeadingData(
             heading = heading.toFloat(),
             confidence = confidence,
-            source = HeadingSource.FUSED
         )
     }
 
