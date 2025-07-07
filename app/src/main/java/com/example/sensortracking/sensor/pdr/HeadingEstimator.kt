@@ -26,12 +26,7 @@ class HeadingEstimator(private val config: PDRConfig) {
         hasRotationVector = true
     }
     
-    fun estimateHeading(
-        accelerometer: FloatArray,
-        gyroscope: FloatArray,
-        magnetometer: FloatArray,
-        timestamp: Long
-    ): HeadingData {
+    fun estimateHeading(): HeadingData {
         if (!hasRotationVector) {
             return HeadingData(
                 heading = 0f,
@@ -39,7 +34,6 @@ class HeadingEstimator(private val config: PDRConfig) {
                 source = HeadingSource.FUSED
             )
         }
-        
         return estimateHeadingFromRotationVector()
     }
     

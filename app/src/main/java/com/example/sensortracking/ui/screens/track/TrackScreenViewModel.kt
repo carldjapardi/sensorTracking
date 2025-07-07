@@ -176,13 +176,8 @@ class TrackScreenViewModel : ViewModel() {
     }
     
     fun updatePDRConfig(newConfig: PDRConfig) {
-        // Update UI state
         _uiState.update { it.copy(pdrConfig = newConfig) }
-        
-        // Update PDR processor if it exists
         pdrProcessor?.updateConfig(newConfig)
-        
-        // Reinitialize PDR processor with new config if needed
         if (isInitialized) {
             initializePDRProcessor()
         }

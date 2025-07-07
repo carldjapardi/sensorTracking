@@ -34,7 +34,7 @@ class PDRProcessor(
     private var lastStepData: StepData? = null
     
     private val pathHistory = mutableListOf<Position>()
-    private val maxHistorySize = 200 // Reduced from 1000 to 200
+    private val maxHistorySize = 200
     
     private var lastStrideConfidence = 0f
     private var lastStrideTimestamp = 0L
@@ -62,26 +62,18 @@ class PDRProcessor(
     
     fun processSensorData(
         accelerometer: FloatArray,
-        gyroscope: FloatArray,
-        magnetometer: FloatArray,
         timestamp: Long
     ): PDRData {
-        
-        // Always update heading estimation
-        currentHeading = headingEstimator.estimateHeading(
-            accelerometer, gyroscope, magnetometer, timestamp
-        )
+        currentHeading = headingEstimator.estimateHeading()
         
         // Only process steps and update position if tracking
         if (!isTracking) {
             return getCurrentPDRData()
         }
         
-        // Detect step
         val stepData = stepDetector.detectStep(accelerometer, timestamp)
         
         if (stepData != null) {
-            // Estimate stride length
             val strideData = strideEstimator.estimateStride(accelerometer, timestamp)
             
             // Cache stride confidence for later use
@@ -96,7 +88,6 @@ class PDRProcessor(
             totalDistance += strideData.length
             lastStepData = stepData
             
-            // Add to path history
             addToPathHistory(currentPosition)
         }
         
@@ -113,7 +104,6 @@ class PDRProcessor(
         val deltaX = strideLength * sin(headingRadians).toFloat()
         val deltaY = -strideLength * cos(headingRadians).toFloat() // Negative for correct coordinate system
         
-        // Update position
         val newPosition = Position(
             x = currentPosition.x + deltaX,
             y = currentPosition.y + deltaY
@@ -151,13 +141,11 @@ class PDRProcessor(
         var confidence = 0f
         var count = 0
         
-        // Step detection confidence
         lastStepData?.let {
             confidence += it.confidence
             count++
         }
         
-        // Heading confidence
         confidence += currentHeading.confidence
         count++
         
