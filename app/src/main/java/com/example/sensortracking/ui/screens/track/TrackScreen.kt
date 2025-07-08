@@ -50,14 +50,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import kotlin.math.max
 import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrackScreen(
-    navController: NavController,
     viewModel: TrackScreenViewModel = viewModel(),
     showStartDialogOnNav: Int = 0
 ) {
@@ -168,14 +166,7 @@ fun TrackScreen(
                 .verticalScroll(scrollState)
         ) {
             // 1. Grid/Floor Plan Canvas
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(350.dp) // Fixed height
-                    .padding(8.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.LightGray)
-            ) {
+            Box(modifier = Modifier.fillMaxWidth().height(350.dp).padding(8.dp).clip(RoundedCornerShape(12.dp)).background(Color.LightGray)) {
                 GridFloorPlanArea(
                     zoom = uiState.zoom,
                     onZoomChange = {
@@ -191,9 +182,7 @@ fun TrackScreen(
 
             // 2. Info Row: New Tracking, Save Tracking, Zoom, Area
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(20.dp)
             ) {
@@ -237,31 +226,19 @@ fun TrackScreen(
 
             // 3. Action Buttons: Start Tracking, Scan Barcode
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 if (uiState.isTracking) {
-                    Button(
-                        onClick = viewModel::onStopTracking,
-                        modifier = Modifier.width(140.dp).height(50.dp)
-                    ) {
+                    Button(onClick = viewModel::onStopTracking, modifier = Modifier.width(140.dp).height(50.dp)) {
                         Text("Stop Tracking")
                     }
                 } else {
-                    Button(
-                        onClick = viewModel::onStartTracking,
-                        enabled = uiState.canStartTracking,
-                        modifier = Modifier.width(140.dp).height(50.dp)
-                    ) {
+                    Button(onClick = viewModel::onStartTracking, enabled = uiState.canStartTracking, modifier = Modifier.width(140.dp).height(50.dp)) {
                         Text("Start Tracking")
                     }
                 }
-                Button(
-                    onClick = viewModel::onScanBarcode,
-                    modifier = Modifier.width(140.dp).height(50.dp)
-                ) {
+                Button(onClick = viewModel::onScanBarcode, modifier = Modifier.width(140.dp).height(50.dp)) {
                     Text("Scan Barcode")
                 }
             }
@@ -269,17 +246,12 @@ fun TrackScreen(
             // 5. PDR Data Display
             var pdrExpanded by remember { mutableStateOf(true) }
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { pdrExpanded = !pdrExpanded }
-                            .padding(12.dp),
+                        modifier = Modifier.fillMaxWidth().clickable { pdrExpanded = !pdrExpanded }.padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("PDR Data", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
