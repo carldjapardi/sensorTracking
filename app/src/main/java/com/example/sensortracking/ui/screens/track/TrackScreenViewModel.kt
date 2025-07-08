@@ -152,7 +152,7 @@ class TrackScreenViewModel : ViewModel() {
         }
     }
     
-    fun onScanBarcode() {
+    fun onCalibratePosition() {
         // TODO: Implement scan barcode logic
         // This could update the current position based on barcode location
     }

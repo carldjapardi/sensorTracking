@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun CombinedPDRDataDisplay(uiState: TrackScreenUiState, viewModel: TrackScreenViewModel) {
+fun CombinedPDRDataDisplay(uiState: TrackScreenUiState) {
     Column(modifier = Modifier.padding(12.dp)) {
         // Position and Heading
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -54,8 +54,6 @@ fun CombinedPDRDataDisplay(uiState: TrackScreenUiState, viewModel: TrackScreenVi
             Text("Acc: ${if (uiState.hasAccelerometer) "✓" else "✗"}", style = MaterialTheme.typography.bodySmall)
             Text("Gyro: ${if (uiState.hasGyroscope) "✓" else "✗"}", style = MaterialTheme.typography.bodySmall)
             Text("Mag: ${if (uiState.hasMagnetometer) "✓" else "✗"}", style = MaterialTheme.typography.bodySmall)
-        }
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             Text("RotVec: ${if (uiState.hasRotationVector) "✓" else "✗"}", style = MaterialTheme.typography.bodySmall)
         }
     }

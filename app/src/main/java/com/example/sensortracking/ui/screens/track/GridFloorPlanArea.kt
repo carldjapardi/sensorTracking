@@ -1,5 +1,6 @@
 package com.example.sensortracking.ui.screens.track
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,7 +37,7 @@ fun GridFloorPlanArea(
         contentAlignment = Alignment.Center
     ) {
         // Draw grid using Canvas, apply zoom only
-        androidx.compose.foundation.Canvas(
+        Canvas(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {

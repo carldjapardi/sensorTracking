@@ -37,9 +37,6 @@ data class TrackScreenUiState(
     val errorMessage: String? = null,
     val isError: Boolean = false
 ) {
-    val allSensorsAvailable: Boolean
-        get() = hasAccelerometer && hasGyroscope && hasMagnetometer && hasRotationVector
-    
     val currentPosition: Position
         get() = pdrData?.position ?: Position(0f, 0f)
     

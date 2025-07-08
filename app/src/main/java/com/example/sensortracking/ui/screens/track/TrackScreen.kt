@@ -71,9 +71,7 @@ fun TrackScreen(
     var tempWidth by remember { mutableStateOf(uiState.area.width.toInt().toString()) }
 
     // Initialize sensors when screen is first loaded
-    LaunchedEffect(Unit) {
-        viewModel.initializeSensors(context)
-    }
+    LaunchedEffect(Unit) { viewModel.initializeSensors(context) }
 
     // Show start dialog every time showStartDialogOnNav changes
     var lastDialogTrigger by remember { mutableStateOf(-1) }
@@ -159,12 +157,7 @@ fun TrackScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(scrollState)
-        ) {
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding).verticalScroll(scrollState)) {
             // 1. Grid/Floor Plan Canvas
             Box(modifier = Modifier.fillMaxWidth().height(350.dp).padding(8.dp).clip(RoundedCornerShape(12.dp)).background(Color.LightGray)) {
                 GridFloorPlanArea(
@@ -224,7 +217,7 @@ fun TrackScreen(
                 }
             }
 
-            // 3. Action Buttons: Start Tracking, Scan Barcode
+            // 3. Action Buttons: Start Tracking, Calibrate Position
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -238,8 +231,8 @@ fun TrackScreen(
                         Text("Start Tracking")
                     }
                 }
-                Button(onClick = viewModel::onScanBarcode, modifier = Modifier.width(140.dp).height(50.dp)) {
-                    Text("Scan Barcode")
+                Button(onClick = viewModel::onCalibratePosition, modifier = Modifier.width(140.dp).height(50.dp)) {
+                    Text("Calibrate Position")
                 }
             }
             
@@ -260,9 +253,7 @@ fun TrackScreen(
                             contentDescription = null
                         )
                     }
-                    if (pdrExpanded) {
-                        CombinedPDRDataDisplay(uiState = uiState, viewModel = viewModel)
-                    }
+                    if (pdrExpanded) { CombinedPDRDataDisplay(uiState = uiState) }
                 }
             }
         }
