@@ -25,8 +25,7 @@ class PDRProcessor(private val config: PDRConfig = PDRConfig(), private val area
     private var isTracking = false
     private var lastStepData: StepData? = null
     
-    private val pathHistory = mutableListOf<Position>()
-    private val maxHistorySize = 200
+    private val pathHistory = ArrayList<Position>()
     
     private var lastStrideConfidence = 0f
     private var lastStrideTimestamp = 0L
@@ -96,9 +95,6 @@ class PDRProcessor(private val config: PDRConfig = PDRConfig(), private val area
     
     private fun addToPathHistory(position: Position) {
         pathHistory.add(position)
-        if (pathHistory.size > maxHistorySize) {
-            pathHistory.removeAt(0)
-        }
     }
 
     fun getCurrentPDRData(): PDRData {
