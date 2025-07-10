@@ -163,6 +163,14 @@ class PDRProcessor(private val config: PDRConfig = PDRConfig(), private val area
         pathHistory.add(currentPosition)
     }
 
+    fun calibratePosition(position: Position) {
+        currentPosition = if (areaBounds.contains(position)) {
+            position
+        } else {
+            areaBounds.clamp(position)
+        }
+    }
+
     fun getPathHistory(): List<Position> = pathHistory.toList()
 
     fun updateRotationVector(rotationVector: FloatArray) {

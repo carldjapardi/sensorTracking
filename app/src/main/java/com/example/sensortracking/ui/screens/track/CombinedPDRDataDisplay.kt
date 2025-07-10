@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.sensortracking.sensor.math.toFixed
 
 @Composable
 fun CombinedPDRDataDisplay(uiState: TrackScreenUiState) {
@@ -57,8 +58,4 @@ fun CombinedPDRDataDisplay(uiState: TrackScreenUiState) {
             Text("RotVec: ${if (uiState.hasRotationVector) "✓" else "✗"}", style = MaterialTheme.typography.bodySmall)
         }
     }
-}
-
-private fun Float.toFixed(digits: Int): String {
-    return "%.${digits}f".format(this)
 }

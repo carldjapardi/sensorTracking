@@ -91,12 +91,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding)
                     ) {
                         composable("home") { HomeScreen(navController) }
-                        composable("track") {
-                            TrackScreen(
-                                navController,
-                                showStartDialogOnNav = trackTabTrigger
-                            )
-                        }
+                        composable("track") { TrackScreen(showStartDialogOnNav = trackTabTrigger) }
                         composable("upload") { UploadScreen(navController) }
                         composable("settings") { SettingsScreen(navController) }
                     }

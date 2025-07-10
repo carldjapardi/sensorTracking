@@ -50,6 +50,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.sensortracking.ui.screens.track.trackScreenDialog.*
 import kotlin.math.max
 import kotlin.math.min
 
@@ -64,24 +65,25 @@ fun TrackScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scrollState = rememberScrollState()
 
-    var showNewTrackingConfirmDialog by remember { mutableStateOf(false) }
+    var showCalibrateDialog by remember { mutableStateOf(false) }
+    var showNewTrackingDialog by remember { mutableStateOf(false) }
     var showSaveTrackingDialog by remember { mutableStateOf(false) }
+    var showStartDialog by remember { mutableStateOf(false) }
     var showAreaDialog by remember { mutableStateOf(false) }
+    var showInitialPositionDialog by remember { mutableStateOf(false) }
+    var lastDialogTrigger by remember { mutableStateOf(-1) }
+    
+    // Temporary state for dialogs
     var tempLength by remember { mutableStateOf(uiState.area.length.toInt().toString()) }
     var tempWidth by remember { mutableStateOf(uiState.area.width.toInt().toString()) }
 
-    // Initialize sensors when screen is first loaded
     LaunchedEffect(Unit) { viewModel.initializeSensors(context) }
 
-    // Show start dialog every time showStartDialogOnNav changes
-    var lastDialogTrigger by remember { mutableStateOf(-1) }
-    var showStartDialog by remember { mutableStateOf(false) }
     if (showStartDialogOnNav != lastDialogTrigger) {
         lastDialogTrigger = showStartDialogOnNav
         showStartDialog = true
     }
 
-    // Handle errors and sensor initialization
     LaunchedEffect(uiState.isError, uiState.errorMessage) {
         if (uiState.isError && uiState.errorMessage != null) {
             snackbarHostState.showSnackbar(uiState.errorMessage!!)
@@ -89,26 +91,34 @@ fun TrackScreen(
         }
     }
 
-    if (uiState.showInitialPositionDialog) {
+    // ===== DIALOGS =====
+    if (showInitialPositionDialog) {
         InitialPositionDialog(
-            area = uiState.area,
-            initialPosition = uiState.initialPosition,
-            onPositionSet = { x, y -> viewModel.setInitialPosition(x, y) },
-            onDismiss = { viewModel.hideInitialPositionDialog() }
+            viewModel = viewModel,
+            onDismiss = { showInitialPositionDialog = false }
         )
     }
 
-    if (showNewTrackingConfirmDialog) {
+    if (showCalibrateDialog) {
+        CalibratePositionDialog(
+            viewModel = viewModel,
+            onDismiss = { showCalibrateDialog = false }
+        )
+    }
+
+    if (showNewTrackingDialog) {
         NewTrackingConfirmDialog(
             viewModel = viewModel,
-            onDismiss = { showNewTrackingConfirmDialog = false })
+            onDismiss = { showNewTrackingDialog = false },
+            onNewTracking = { 
+                viewModel.newTracking { showInitialPositionDialog = true }
+                showNewTrackingDialog = false
+            }
+        )
     }
 
     if (showSaveTrackingDialog) {
-        ShowSaveTrackingAlertDialog(
-            viewModel = viewModel,
-            onDismiss = { showSaveTrackingDialog = false }
-        )
+        SaveTrackingDialog(viewModel = viewModel, onDismiss = { showSaveTrackingDialog = false })
     }
 
     if (showStartDialog) {
@@ -134,13 +144,13 @@ fun TrackScreen(
                 val widthInt = tempWidth.toIntOrNull() ?: 1
                 viewModel.setArea(lengthInt.toFloat(), widthInt.toFloat())
                 showAreaDialog = false
-                viewModel.showInitialPositionDialog()
+                showInitialPositionDialog = true
             },
             onDismiss = { showAreaDialog = false }
         )
     }
     
-    // Zoom Range 0-300%
+    // ===== MAIN UI =====
     val minZoom = 0.0f
     val maxZoom = 3.0f
     
@@ -180,7 +190,7 @@ fun TrackScreen(
                 horizontalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 IconButton(
-                    onClick = { showNewTrackingConfirmDialog = true },
+                    onClick = { showNewTrackingDialog = true },
                     modifier = Modifier.size(30.dp)
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "New Tracking", modifier = Modifier.size(28.dp))
@@ -192,9 +202,7 @@ fun TrackScreen(
                     Icon(Icons.Default.Save, contentDescription = "Save Tracking", modifier = Modifier.size(28.dp))
                 }
                 Spacer(Modifier.weight(1f))
-                Column {
-                    Text("Area: ${uiState.area.length.toInt()}M X ${uiState.area.width.toInt()}M", fontSize = 16.sp)
-                }
+                Text("Area: ${uiState.area.length.toInt()}M X ${uiState.area.width.toInt()}M", fontSize = 16.sp)
                 Row {
                     IconButton(
                         onClick = {
@@ -222,7 +230,7 @@ fun TrackScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                if (uiState.isTracking) {
+                if (!uiState.canStartTracking) {
                     Button(onClick = viewModel::onStopTracking, modifier = Modifier.width(140.dp).height(50.dp)) {
                         Text("Stop Tracking")
                     }
@@ -231,12 +239,12 @@ fun TrackScreen(
                         Text("Start Tracking")
                     }
                 }
-                Button(onClick = viewModel::onCalibratePosition, modifier = Modifier.width(140.dp).height(50.dp)) {
-                    Text("Calibrate Position")
+                Button(onClick = { showCalibrateDialog = true }, modifier = Modifier.width(140.dp).height(50.dp)) {
+                    Text("Calibrate Pos")
                 }
             }
             
-            // 5. PDR Data Display
+            // 4. PDR Data Display
             var pdrExpanded by remember { mutableStateOf(true) }
             Card(
                 modifier = Modifier.fillMaxWidth().padding(8.dp),

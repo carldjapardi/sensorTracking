@@ -20,10 +20,6 @@ data class TrackScreenUiState(
     val pdrData: PDRData? = null,
     val isTracking: Boolean = false,
     
-    // Dialog states
-    val showInitialPositionDialog: Boolean = false,
-    val initialPosition: InitialPosition = InitialPosition(),
-    
     // PDR Configuration
     val pdrConfig: PDRConfig = PDRConfig(),
     
@@ -53,5 +49,5 @@ data class TrackScreenUiState(
         get() = pdrData?.confidence ?: 0f
     
     val canStartTracking: Boolean
-        get() = !isTracking && pdrData != null
+        get() = !isTracking
 } 
