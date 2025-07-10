@@ -94,8 +94,16 @@ class TrackScreenViewModel : ViewModel() {
     }
     
     fun onStartTracking() {
-        val currentPos = _uiState.value.pdrData?.position ?: Position(0f, 0f)
-        pdrSensorManager?.startTracking(currentPos)
+        if (!_uiState.value.canStartTracking) return
+        
+        // If have existing PDR data, resume tracking
+        if (_uiState.value.pdrData != null) {
+            pdrSensorManager?.resumeTracking()
+        } else {
+            val currentPos = _uiState.value.pdrData?.position ?: Position(0f, 0f)
+            pdrSensorManager?.startTracking(currentPos)
+        }
+        
         _uiState.update { it.copy(isTracking = true) }
     }
     
@@ -104,16 +112,20 @@ class TrackScreenViewModel : ViewModel() {
         _uiState.update { it.copy(isTracking = false) }
     }
     
+    fun onStartNewTracking() {
+        onStopTracking()
+        pdrProcessor?.reset()
+        _uiState.update { 
+            it.copy(
+                pdrData = null,
+                isTracking = false
+            )
+        }
+    }
+    
     fun saveTracking() {
         // TODO: Implement save logic (future: show name/desc dialog)
         // Save current tracking data to storage
-    }
-    
-    fun newTracking(onShowInitialPosition: () -> Unit) {
-        onStopTracking()
-        pdrProcessor?.reset()
-        _uiState.update { it.copy(pdrData = null, isTracking = false) }
-        onShowInitialPosition()
     }
     
     fun updatePDRConfig(newConfig: PDRConfig) {

@@ -149,9 +149,10 @@ class PDRProcessor(private val config: PDRConfig = PDRConfig(), private val area
         isTracking = true
     }
 
-    fun stopTracking() {
-        isTracking = false
-    }
+    // Resume tracking without clearing path history
+    fun resumeTracking() { isTracking = true }
+
+    fun stopTracking() { isTracking = false }
 
     fun setInitialPosition(position: Position) {
         currentPosition = if (areaBounds.contains(position)) {

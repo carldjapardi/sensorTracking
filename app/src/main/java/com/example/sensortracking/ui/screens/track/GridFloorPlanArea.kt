@@ -92,16 +92,12 @@ fun GridFloorPlanArea(
                 }
             }
 
-            // Draw current position
+            // current position
             val posX = startX + (userPosition.x / area.length) * gridWidth
             val posY = startY + (userPosition.y / area.width) * gridHeight
 
-            // Draw position indicator
-            drawCircle(
-                color = Color.Red,
-                radius = 8f,
-                center = Offset(posX, posY)
-            )
+            // position indicator
+            drawCircle(color = Color.Red, radius = 8f, center = Offset(posX, posY))
         }
     }
 }

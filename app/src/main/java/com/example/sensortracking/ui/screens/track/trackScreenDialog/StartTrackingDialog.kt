@@ -7,6 +7,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -22,11 +23,11 @@ fun StartTrackingDialog(
         text = {
             Column {
                 Text("Choose how to start tracking:")
-                Spacer(androidx.compose.ui.Modifier.height(8.dp))
+                Spacer(Modifier.height(8.dp))
                 Button(onClick = { onDismiss(); onSelectFloorPlan() }) { Text("Select Floor Plan") }
-                Spacer(androidx.compose.ui.Modifier.height(8.dp))
+                Spacer(Modifier.height(8.dp))
                 Button(onClick = { onDismiss(); onUploadFloorPlan() }) { Text("Upload New Floor Plan") }
-                Spacer(androidx.compose.ui.Modifier.height(8.dp))
+                Spacer(Modifier.height(8.dp))
                 Button(onClick = { onDismiss(); onNoFloorPlan() }) { Text("No Floor Plan") }
             }
         },

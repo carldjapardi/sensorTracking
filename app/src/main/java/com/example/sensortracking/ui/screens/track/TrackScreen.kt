@@ -111,7 +111,8 @@ fun TrackScreen(
             viewModel = viewModel,
             onDismiss = { showNewTrackingDialog = false },
             onNewTracking = { 
-                viewModel.newTracking { showInitialPositionDialog = true }
+                viewModel.onStartNewTracking()
+                showInitialPositionDialog = true
                 showNewTrackingDialog = false
             }
         )

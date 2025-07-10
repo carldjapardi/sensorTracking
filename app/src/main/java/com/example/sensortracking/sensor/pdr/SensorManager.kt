@@ -80,6 +80,8 @@ class PDRSensorManager(private val context: Context, private val pdrProcessor: P
 
     fun startTracking(initialPosition: Position) { pdrProcessor.startTracking(initialPosition) }
 
+    fun resumeTracking() { pdrProcessor.resumeTracking() }
+
     fun stopTracking() { pdrProcessor.stopTracking() }
 
     fun setInitialPosition(position: Position) { pdrProcessor.setInitialPosition(position) }
