@@ -41,11 +41,6 @@ class TrackScreenViewModel : ViewModel() {
         }
     }
 
-    fun onCalibratePosition() {
-        val currentPos = _uiState.value.pdrData?.position ?: Position(0f, 0f)
-        pdrSensorManager?.calibratePosition(currentPos)
-    }
-
     fun setCalibratedPosition(x: Float, y: Float) {
         val clampedX = x.coerceIn(0f, _uiState.value.area.length)
         val clampedY = y.coerceIn(0f, _uiState.value.area.width)
@@ -95,8 +90,6 @@ class TrackScreenViewModel : ViewModel() {
     
     fun onStartTracking() {
         if (!_uiState.value.canStartTracking) return
-        
-        // If have existing PDR data, resume tracking
         if (_uiState.value.pdrData != null) {
             pdrSensorManager?.resumeTracking()
         } else {
@@ -115,12 +108,7 @@ class TrackScreenViewModel : ViewModel() {
     fun onStartNewTracking() {
         onStopTracking()
         pdrProcessor?.reset()
-        _uiState.update { 
-            it.copy(
-                pdrData = null,
-                isTracking = false
-            )
-        }
+        _uiState.update { it.copy(pdrData = null, isTracking = false) }
     }
     
     fun saveTracking() {

@@ -149,8 +149,7 @@ class PDRProcessor(private val config: PDRConfig = PDRConfig(), private val area
         isTracking = true
     }
 
-    // Resume tracking without clearing path history
-    fun resumeTracking() { isTracking = true }
+    fun resumeTracking() { isTracking = true } // Resume tracking without clearing path history
 
     fun stopTracking() { isTracking = false }
 
@@ -197,7 +196,6 @@ class PDRProcessor(private val config: PDRConfig = PDRConfig(), private val area
         lastStepData = null
         pathHistory.clear()
         
-        // Reset cached values
         lastStrideConfidence = 0f
         lastStrideTimestamp = 0L
     }

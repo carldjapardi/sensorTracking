@@ -92,36 +92,6 @@ fun TrackScreen(
     }
 
     // ===== DIALOGS =====
-    if (showInitialPositionDialog) {
-        InitialPositionDialog(
-            viewModel = viewModel,
-            onDismiss = { showInitialPositionDialog = false }
-        )
-    }
-
-    if (showCalibrateDialog) {
-        CalibratePositionDialog(
-            viewModel = viewModel,
-            onDismiss = { showCalibrateDialog = false }
-        )
-    }
-
-    if (showNewTrackingDialog) {
-        NewTrackingConfirmDialog(
-            viewModel = viewModel,
-            onDismiss = { showNewTrackingDialog = false },
-            onNewTracking = { 
-                viewModel.onStartNewTracking()
-                showInitialPositionDialog = true
-                showNewTrackingDialog = false
-            }
-        )
-    }
-
-    if (showSaveTrackingDialog) {
-        SaveTrackingDialog(viewModel = viewModel, onDismiss = { showSaveTrackingDialog = false })
-    }
-
     if (showStartDialog) {
         StartTrackingDialog(
             onSelectFloorPlan = { /* TODO: Select floor plan */ },
@@ -149,6 +119,38 @@ fun TrackScreen(
             },
             onDismiss = { showAreaDialog = false }
         )
+    }
+
+    if (showInitialPositionDialog) {
+        InitialPositionDialog(
+            viewModel = viewModel,
+            onDismiss = { showInitialPositionDialog = false }
+        )
+    }
+
+    if (showCalibrateDialog) {
+        CalibratePositionDialog(
+            viewModel = viewModel,
+            onDismiss = { showCalibrateDialog = false }
+        )
+    }
+
+    if (showNewTrackingDialog) {
+        NewTrackingConfirmDialog(
+            viewModel = viewModel,
+            onDismiss = { showNewTrackingDialog = false },
+            onNewTracking = { 
+                viewModel.onStartNewTracking()
+                showInitialPositionDialog = true
+                showNewTrackingDialog = false
+            }
+        )
+    }
+
+    if (showSaveTrackingDialog) {
+        SaveTrackingDialog(
+            viewModel = viewModel,
+            onDismiss = { showSaveTrackingDialog = false })
     }
     
     // ===== MAIN UI =====
@@ -247,10 +249,7 @@ fun TrackScreen(
             
             // 4. PDR Data Display
             var pdrExpanded by remember { mutableStateOf(true) }
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(8.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
+            Card(modifier = Modifier.fillMaxWidth().padding(8.dp), shape = RoundedCornerShape(12.dp)) {
                 Column {
                     Row(
                         modifier = Modifier.fillMaxWidth().clickable { pdrExpanded = !pdrExpanded }.padding(12.dp),
