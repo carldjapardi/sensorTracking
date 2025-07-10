@@ -105,6 +105,15 @@ class TrackScreenViewModel : ViewModel() {
         _uiState.update { it.copy(isTracking = false) }
     }
     
+    fun pauseTracking() {
+        pdrSensorManager?.stopTracking()
+    }
+    
+    fun resumeTracking() {
+        pdrSensorManager?.resumeTracking()
+        _uiState.update { it.copy(isTracking = true) }
+    }
+    
     fun onStartNewTracking() {
         onStopTracking()
         pdrProcessor?.reset()

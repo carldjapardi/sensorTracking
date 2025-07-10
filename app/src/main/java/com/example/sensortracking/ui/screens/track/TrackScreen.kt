@@ -131,7 +131,12 @@ fun TrackScreen(
     if (showCalibrateDialog) {
         CalibratePositionDialog(
             viewModel = viewModel,
-            onDismiss = { showCalibrateDialog = false }
+            onDismiss = {
+                showCalibrateDialog = false
+                if (uiState.isTracking) {
+                    viewModel.resumeTracking()
+                }
+            }
         )
     }
 
@@ -139,7 +144,7 @@ fun TrackScreen(
         NewTrackingConfirmDialog(
             viewModel = viewModel,
             onDismiss = { showNewTrackingDialog = false },
-            onNewTracking = { 
+            onNewTracking = {
                 viewModel.onStartNewTracking()
                 showInitialPositionDialog = true
                 showNewTrackingDialog = false
@@ -152,7 +157,7 @@ fun TrackScreen(
             viewModel = viewModel,
             onDismiss = { showSaveTrackingDialog = false })
     }
-    
+
     // ===== MAIN UI =====
     val minZoom = 0.0f
     val maxZoom = 3.0f
@@ -242,7 +247,12 @@ fun TrackScreen(
                         Text("Start Tracking")
                     }
                 }
-                Button(onClick = { showCalibrateDialog = true }, modifier = Modifier.width(140.dp).height(50.dp)) {
+                Button(
+                    modifier = Modifier.width(140.dp).height(50.dp),
+                    onClick = {
+                    if (uiState.isTracking) { viewModel.pauseTracking() }
+                    showCalibrateDialog = true }
+                ) {
                     Text("Calibrate Pos")
                 }
             }

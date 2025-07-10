@@ -164,11 +164,13 @@ class PDRProcessor(private val config: PDRConfig = PDRConfig(), private val area
     }
 
     fun calibratePosition(position: Position) {
+        val previousPosition = currentPosition
         currentPosition = if (areaBounds.contains(position)) {
             position
         } else {
             areaBounds.clamp(position)
         }
+        addToPathHistory(currentPosition)
     }
 
     fun getPathHistory(): List<Position> = pathHistory.toList()
