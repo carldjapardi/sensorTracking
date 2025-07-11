@@ -25,6 +25,7 @@ class TrackScreenViewModel : ViewModel() {
     private var pdrSensorManager: PDRSensorManager? = null
     private var logAnalyzer: LogAnalyzer? = null
     private var pathReconstructor: PathReconstructor? = null
+    private var warehouseMapProcessor: com.example.sensortracking.sensor.pdr.WarehouseMapProcessor? = null
     
     private var isInitialized = false
     
@@ -38,8 +39,12 @@ class TrackScreenViewModel : ViewModel() {
     }
     
     fun setInitialPosition(x: Float, y: Float) {
-        val clampedX = x.coerceIn(0f, _uiState.value.area.length)
-        val clampedY = y.coerceIn(0f, _uiState.value.area.width)
+        val warehouseMap = _uiState.value.warehouseMap
+        val maxX = if (warehouseMap != null) warehouseMap.width.toFloat() else _uiState.value.area.length
+        val maxY = if (warehouseMap != null) warehouseMap.height.toFloat() else _uiState.value.area.width
+        
+        val clampedX = x.coerceIn(0f, maxX)
+        val clampedY = y.coerceIn(0f, maxY)
         pdrSensorManager?.setInitialPosition(Position(clampedX, clampedY))
         
         pdrProcessor?.getCurrentPDRData()?.let { pdrData ->
@@ -48,8 +53,12 @@ class TrackScreenViewModel : ViewModel() {
     }
 
     fun setCalibratedPosition(x: Float, y: Float, calibrationType: CalibrationType) {
-        val clampedX = x.coerceIn(0f, _uiState.value.area.length)
-        val clampedY = y.coerceIn(0f, _uiState.value.area.width)
+        val warehouseMap = _uiState.value.warehouseMap
+        val maxX = if (warehouseMap != null) warehouseMap.width.toFloat() else _uiState.value.area.length
+        val maxY = if (warehouseMap != null) warehouseMap.height.toFloat() else _uiState.value.area.width
+        
+        val clampedX = x.coerceIn(0f, maxX)
+        val clampedY = y.coerceIn(0f, maxY)
         pdrSensorManager?.calibratePosition(Position(clampedX, clampedY), calibrationType)
     }
     
@@ -84,10 +93,28 @@ class TrackScreenViewModel : ViewModel() {
     
     private fun initializePDRProcessor() {
         val area = _uiState.value.area
-        val bounds = PDRProcessor.AreaBounds(minX = 0f, maxX = area.length, minY = 0f, maxY = area.width)
-        pdrProcessor = PDRProcessor(config = _uiState.value.pdrConfig, areaBounds = bounds)
+        val warehouseMap = _uiState.value.warehouseMap
+        
+        // Use warehouse map bounds if available, otherwise use area bounds
+        val bounds = if (warehouseMap != null) {
+            PDRProcessor.AreaBounds(
+                minX = 0f, 
+                maxX = warehouseMap.width.toFloat(), 
+                minY = 0f, 
+                maxY = warehouseMap.height.toFloat()
+            )
+        } else {
+            PDRProcessor.AreaBounds(minX = 0f, maxX = area.length, minY = 0f, maxY = area.width)
+        }
+        
+        pdrProcessor = PDRProcessor(
+            config = _uiState.value.pdrConfig, 
+            areaBounds = bounds,
+            warehouseMap = warehouseMap
+        )
         logAnalyzer = LogAnalyzer(_uiState.value.pdrConfig.headingTolerance)
         pathReconstructor = PathReconstructor()
+        warehouseMapProcessor = com.example.sensortracking.sensor.pdr.WarehouseMapProcessor()
     }
     
     private fun observePDRData() {
@@ -150,6 +177,24 @@ class TrackScreenViewModel : ViewModel() {
     fun getPathSegments(): List<PathSegment> {
         val pathHistory = getPathHistory()
         return logAnalyzer?.analyzePath(pathHistory) ?: emptyList()
+    }
+    
+    fun loadWarehouseMap(excelData: Array<Array<String>>) {
+        warehouseMapProcessor?.let { processor ->
+            val warehouseMap = processor.parseWarehouseMap(excelData)
+            _uiState.update { it.copy(warehouseMap = warehouseMap) }
+            pdrProcessor?.setWarehouseMap(warehouseMap)
+        }
+    }
+    
+    fun loadWarehouseMap(warehouseMap: com.example.sensortracking.data.WarehouseMap) {
+        _uiState.update { it.copy(warehouseMap = warehouseMap) }
+        pdrProcessor?.setWarehouseMap(warehouseMap)
+    }
+    
+    fun clearWarehouseMap() {
+        _uiState.update { it.copy(warehouseMap = null) }
+        pdrProcessor?.setWarehouseMap(null)
     }
     
     fun updatePathSegment(index: Int, newSegment: PathSegment) {

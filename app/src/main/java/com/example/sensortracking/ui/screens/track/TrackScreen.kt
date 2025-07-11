@@ -51,6 +51,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.sensortracking.ui.screens.track.trackScreenDialog.*
 import kotlin.math.max
 import kotlin.math.min
@@ -58,8 +59,10 @@ import kotlin.math.min
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrackScreen(
+    navController: NavController? = null,
     viewModel: TrackScreenViewModel = viewModel(),
-    showStartDialogOnNav: Int = 0
+    showStartDialogOnNav: Int = 0,
+    selectedFloorPlan: com.example.sensortracking.data.WarehouseMap? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -75,9 +78,14 @@ fun TrackScreen(
     var showEditSegmentDialog by remember { mutableStateOf<PathSegment?>(null) }
     var lastDialogTrigger by remember { mutableStateOf(-1) }
     
-    // Temporary state for dialogs
     var tempLength by remember { mutableStateOf(uiState.area.length.toInt().toString()) }
     var tempWidth by remember { mutableStateOf(uiState.area.width.toInt().toString()) }
+    
+    LaunchedEffect(selectedFloorPlan) {
+        selectedFloorPlan?.let { floorPlan ->
+            viewModel.loadWarehouseMap(floorPlan)
+        }
+    }
 
     LaunchedEffect(Unit) { viewModel.initializeSensors(context) }
 
@@ -93,16 +101,19 @@ fun TrackScreen(
         }
     }
 
-    // ===== DIALOGS =====
     if (showStartDialog) {
         StartTrackingDialog(
-            onSelectFloorPlan = { /* TODO: Select floor plan */ },
+            onSelectFloorPlan = { 
+                navController?.navigate("upload")
+            },
             onUploadFloorPlan = { /* TODO: Upload new floor plan */ },
             onNoFloorPlan = {
+                viewModel.clearWarehouseMap()
                 showStartDialog = false
                 showAreaDialog = true
             },
-            onDismiss = { showStartDialog = false }
+            onDismiss = { showStartDialog = false },
+            hasSelectedFloorPlan = uiState.warehouseMap != null
         )
     }
 
@@ -148,7 +159,7 @@ fun TrackScreen(
             onDismiss = { showNewTrackingDialog = false },
             onNewTracking = {
                 viewModel.onStartNewTracking()
-                showInitialPositionDialog = true
+                showStartDialog = true
                 showNewTrackingDialog = false
             }
         )
@@ -175,7 +186,6 @@ fun TrackScreen(
         )
     }
 
-    // ===== MAIN UI =====
     val minZoom = 0.0f
     val maxZoom = 3.0f
     
@@ -193,7 +203,6 @@ fun TrackScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding).verticalScroll(scrollState)) {
-            // 1. Grid/Floor Plan Canvas
             Box(modifier = Modifier.fillMaxWidth().height(350.dp).padding(8.dp).clip(RoundedCornerShape(12.dp)).background(Color.LightGray)) {
                 GridFloorPlanArea(
                     zoom = uiState.zoom,
@@ -204,11 +213,11 @@ fun TrackScreen(
                     userPosition = uiState.currentPosition,
                     floorPlan = uiState.floorPlan,
                     area = uiState.area,
-                    pathHistory = viewModel.getPathHistory()
+                    pathHistory = viewModel.getPathHistory(),
+                    warehouseMap = uiState.warehouseMap
                 )
             }
 
-            // 2. Info Row: New Tracking, Save Tracking, Zoom, Area
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -227,7 +236,10 @@ fun TrackScreen(
                     Icon(Icons.Default.Save, contentDescription = "Save Tracking", modifier = Modifier.size(28.dp))
                 }
                 Spacer(Modifier.weight(1f))
-                Text("Area: ${uiState.area.length.toInt()}M X ${uiState.area.width.toInt()}M", fontSize = 16.sp)
+                Text(
+                    "Area: ${uiState.warehouseMap?.let { "${it.width}×${it.height}" } ?: "${uiState.area.length.toInt()}M × ${uiState.area.width.toInt()}M"}", 
+                    fontSize = 16.sp
+                )
                 Row {
                     IconButton(
                         onClick = {
@@ -250,7 +262,6 @@ fun TrackScreen(
                 }
             }
 
-            // 3. Action Buttons: Start Tracking, Calibrate Position
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -274,7 +285,6 @@ fun TrackScreen(
                 }
             }
             
-            // 4. PDR Data Display
             var pdrExpanded by remember { mutableStateOf(true) }
             Card(modifier = Modifier.fillMaxWidth().padding(8.dp), shape = RoundedCornerShape(12.dp)) {
                 Column {
@@ -292,7 +302,6 @@ fun TrackScreen(
                 }
             }
             
-            // 5. Log History Display
             LogHistoryDisplay(
                 segments = viewModel.getPathSegments(),
                 onSegmentUpdate = { _, segment -> showEditSegmentDialog = segment }

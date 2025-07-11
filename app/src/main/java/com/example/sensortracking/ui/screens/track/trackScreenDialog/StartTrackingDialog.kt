@@ -15,7 +15,8 @@ fun StartTrackingDialog(
     onSelectFloorPlan: () -> Unit,
     onUploadFloorPlan: () -> Unit,
     onNoFloorPlan: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    hasSelectedFloorPlan: Boolean = false
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -24,7 +25,19 @@ fun StartTrackingDialog(
             Column {
                 Text("Choose how to start tracking:")
                 Spacer(Modifier.height(8.dp))
-                Button(onClick = { onDismiss(); onSelectFloorPlan() }) { Text("Select Floor Plan") }
+                
+                if (hasSelectedFloorPlan) {
+                    Text(
+                        "✓ Floor plan selected",
+                        color = androidx.compose.ui.graphics.Color.Green,
+                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+                
+                Button(onClick = { onDismiss(); onSelectFloorPlan() }) { 
+                    Text(if (hasSelectedFloorPlan) "Change Floor Plan" else "Select Floor Plan") 
+                }
                 Spacer(Modifier.height(8.dp))
                 Button(onClick = { onDismiss(); onUploadFloorPlan() }) { Text("Upload New Floor Plan") }
                 Spacer(Modifier.height(8.dp))

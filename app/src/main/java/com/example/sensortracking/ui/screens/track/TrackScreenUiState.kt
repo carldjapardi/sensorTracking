@@ -15,6 +15,7 @@ data class TrackScreenUiState(
     val zoom: Float = 1f,
     val area: Area = Area(),
     val floorPlan: Any? = null, // Placeholder for floor plan image or grid data
+    val warehouseMap: com.example.sensortracking.data.WarehouseMap? = null,
     
     // PDR Data
     val pdrData: PDRData? = null,

@@ -24,6 +24,7 @@ import com.example.sensortracking.ui.screens.BottomNavigationBar
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sensortracking.ui.AppViewModel
 import com.example.sensortracking.ui.NavigationEvent
+import com.example.sensortracking.data.WarehouseMap
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,8 +36,8 @@ class MainActivity : ComponentActivity() {
                 var trackTabTrigger by remember { mutableStateOf(0) }
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route ?: "home"
+                var selectedFloorPlan by remember { mutableStateOf<WarehouseMap?>(null) }
 
-                // Use AppViewModel for navigation events
                 val appViewModel: AppViewModel = viewModel()
                 val navigationEvent by appViewModel.navigationEvent.collectAsState()
                 val isOnTrackScreen = currentRoute == "track"
@@ -53,7 +54,6 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 ) { innerPadding ->
-                    // Handle navigation events from AppViewModel
                     when (val event = navigationEvent) {
                         is NavigationEvent.ConfirmLeaveTrack -> {
                             AlertDialog(
@@ -62,7 +62,6 @@ class MainActivity : ComponentActivity() {
                                 text = { Text("Do you want to stop the current tracking and save, or cancel?") },
                                 confirmButton = {
                                     Button(onClick = {
-                                        // TODO: Save tracking if needed
                                         appViewModel.confirmLeaveTrack(event.route)
                                     }) { Text("Save and Leave") }
                                 },
@@ -91,8 +90,22 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding)
                     ) {
                         composable("home") { HomeScreen(navController) }
-                        composable("track") { TrackScreen(showStartDialogOnNav = trackTabTrigger) }
-                        composable("upload") { UploadScreen(navController) }
+                        composable("track") { 
+                            TrackScreen(
+                                navController = navController,
+                                showStartDialogOnNav = trackTabTrigger,
+                                selectedFloorPlan = selectedFloorPlan
+                            ) 
+                        }
+                        composable("upload") { 
+                            UploadScreen(
+                                navController = navController,
+                                onFloorPlanSelected = { floorPlan ->
+                                    selectedFloorPlan = floorPlan
+                                    navController.navigate("track")
+                                }
+                            ) 
+                        }
                         composable("settings") { SettingsScreen(navController) }
                     }
                 }

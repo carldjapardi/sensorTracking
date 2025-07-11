@@ -5,6 +5,7 @@ import com.example.sensortracking.data.PDRConfig
 import com.example.sensortracking.data.PDRData
 import com.example.sensortracking.data.Position
 import com.example.sensortracking.data.StepData
+import com.example.sensortracking.data.WarehouseMap
 import com.example.sensortracking.sensor.calibration.CalibrationManager
 import com.example.sensortracking.sensor.calibration.CalibrationType
 import kotlin.math.cos
@@ -13,11 +14,16 @@ import kotlin.math.sin
 /**
  * Main PDR processor manages step detection, stride estimation, heading estimation, and position tracking
  */
-class PDRProcessor(private val config: PDRConfig = PDRConfig(), private val areaBounds: AreaBounds) {
+class PDRProcessor(
+    private val config: PDRConfig = PDRConfig(), 
+    private val areaBounds: AreaBounds,
+    private var warehouseMap: WarehouseMap? = null
+) {
     // initializing components for PDR
     private val stepDetector = StepDetector(config)
     private val strideEstimator = StrideEstimator(config)
     private val headingEstimator = HeadingEstimator(config)
+    private val warehouseMapProcessor = WarehouseMapProcessor()
     
     // Current state
     private var currentPosition = Position(0f, 0f)
@@ -88,12 +94,19 @@ class PDRProcessor(private val config: PDRConfig = PDRConfig(), private val area
             y = currentPosition.y + deltaY
         )
         
-        // Check bounds and clamp if necessary
-        currentPosition = if (areaBounds.contains(newPosition)) {
-            newPosition
+        // Validate movement with warehouse map if available
+        val validatedPosition = if (warehouseMap != null) {
+            warehouseMapProcessor.validateMovement(warehouseMap!!, currentPosition, newPosition)
         } else {
-            areaBounds.clamp(newPosition)
+            // Fallback to area bounds validation
+            if (areaBounds.contains(newPosition)) {
+                newPosition
+            } else {
+                areaBounds.clamp(newPosition)
+            }
         }
+        
+        currentPosition = validatedPosition
     }
     
     private fun addToPathHistory(position: Position) {
@@ -194,6 +207,10 @@ class PDRProcessor(private val config: PDRConfig = PDRConfig(), private val area
         stepDetector.updateConfig(newConfig)
         strideEstimator.updateConfig(newConfig)
         headingEstimator.updateConfig(newConfig)
+    }
+    
+    fun setWarehouseMap(map: WarehouseMap?) {
+        warehouseMap = map
     }
 
     fun reset() {
