@@ -4,13 +4,9 @@ import com.example.sensortracking.data.*
 import kotlin.math.roundToInt
 
 /**
- * Processes Excel warehouse maps and provides collision detection
+ * Parses specified csv data format and validates movements within a warehouse map.
  */
 class WarehouseMapProcessor {
-    
-    /**
-     * Parse Excel data into WarehouseMap
-     */
     fun parseWarehouseMap(excelData: Array<Array<String>>): WarehouseMap {
         val height = excelData.size
         val width = excelData[0].size
@@ -21,23 +17,17 @@ class WarehouseMapProcessor {
             }
         }
         
-        val startPos = findStartPosition(cells)
-        val endPos = findEndPosition(cells)
+        val startPos = findStartOrEndPosition(CellType.START, cells) ?: throw IllegalArgumentException("No START cell found in the map")
+        val endPos = findStartOrEndPosition(CellType.END, cells) ?: throw IllegalArgumentException("No END cell found in the map")
         
-        return WarehouseMap(
-            width = width,
-            height = height,
-            cells = cells,
-            startPosition = startPos,
-            endPosition = endPos
-        )
+        return WarehouseMap(width = width, height = height, cells = cells, startPosition = startPos, endPosition = endPos)
     }
     
     private fun parseCell(x: Int, y: Int, value: String): WarehouseCell {
         return when {
             value == "START" -> WarehouseCell(x, y, CellType.START)
             value == "END" -> WarehouseCell(x, y, CellType.END)
-            value.startsWith("A:") -> parseAisleCell(x, y, value)
+            value.startsWith("A:") -> WarehouseCell(x, y, CellType.AISLE)
             value == "NP" -> WarehouseCell(x, y, CellType.WALL)
             value.matches(Regex("[A-Z]\\d+")) -> WarehouseCell(x, y, CellType.STORAGE, value)
             value.matches(Regex("PRB\\d+")) -> WarehouseCell(x, y, CellType.STORAGE, value)
@@ -45,78 +35,28 @@ class WarehouseMapProcessor {
         }
     }
     
-    private fun parseAisleCell(x: Int, y: Int, value: String): WarehouseCell {
-        val restrictions = mutableSetOf<AisleRestriction>()
-        
-        if (value.contains(";L")) restrictions.add(AisleRestriction.LEFT)
-        if (value.contains(";R")) restrictions.add(AisleRestriction.RIGHT)
-        if (value.contains(";U")) restrictions.add(AisleRestriction.UP)
-        if (value.contains(";D")) restrictions.add(AisleRestriction.DOWN)
-        
-        return WarehouseCell(x, y, CellType.AISLE, aisleRestrictions = restrictions)
-    }
-    
-    private fun findStartPosition(cells: Array<Array<WarehouseCell>>): Position? {
+    private fun findStartOrEndPosition(cellTypeData: CellType, cells: Array<Array<WarehouseCell>>): Position? {
         for (y in cells.indices) {
             for (x in cells[y].indices) {
-                if (cells[y][x].cellType == CellType.START) {
+                if (cells[y][x].cellType == cellTypeData) {
                     return Position(x.toFloat(), y.toFloat())
                 }
             }
         }
         return null
     }
-    
-    private fun findEndPosition(cells: Array<Array<WarehouseCell>>): Position? {
-        for (y in cells.indices) {
-            for (x in cells[y].indices) {
-                if (cells[y][x].cellType == CellType.END) {
-                    return Position(x.toFloat(), y.toFloat())
-                }
-            }
-        }
-        return null
-    }
-    
-    /**
-     * Validate movement from current position to new position
-     */
-    fun validateMovement(
-        warehouseMap: WarehouseMap,
-        currentPos: Position,
-        newPos: Position
-    ): Position {
+
+    // Walkable areas are aisles / start / stop ; Non walkable areas are walls and storage cells
+    // Ignores aisle specific restrictions LRUD
+    fun validateMovement(warehouseMap: WarehouseMap, currPos: Position, newPos: Position): Position {
         val clampedPos = Position(
             x = newPos.x.coerceIn(0f, warehouseMap.width - 1f),
             y = newPos.y.coerceIn(0f, warehouseMap.height - 1f)
         )
-        
         val cell = warehouseMap.getCellAt(clampedPos)
         if (cell?.cellType == CellType.STORAGE || cell?.cellType == CellType.WALL) {
-            return currentPos
+            return currPos
         }
-        
-        val currentCell = warehouseMap.getCellAt(currentPos)
-        if (currentCell?.cellType == CellType.AISLE) {
-            val direction = calculateDirection(currentPos, clampedPos)
-            if (direction in currentCell.aisleRestrictions) {
-                return currentPos
-            }
-        }
-        
         return clampedPos
-    }
-    
-    private fun calculateDirection(from: Position, to: Position): AisleRestriction? {
-        val deltaX = to.x - from.x
-        val deltaY = to.y - from.y
-        
-        return when {
-            deltaX > 0 -> AisleRestriction.RIGHT
-            deltaX < 0 -> AisleRestriction.LEFT
-            deltaY > 0 -> AisleRestriction.DOWN
-            deltaY < 0 -> AisleRestriction.UP
-            else -> null
-        }
     }
 } 

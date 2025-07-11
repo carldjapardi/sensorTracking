@@ -87,9 +87,7 @@ class PDRSensorManager(private val context: Context, private val pdrProcessor: P
 
     fun setInitialPosition(position: Position) { pdrProcessor.setInitialPosition(position) }
 
-    fun calibratePosition(position: Position, calibrationType: CalibrationType) {
-        pdrProcessor.calibratePosition(position, calibrationType) 
-    }
+    fun calibratePosition(position: Position, calibrationType: CalibrationType) { pdrProcessor.calibratePosition(position, calibrationType) }
 
     fun updateConfig(newConfig: PDRConfig) { pdrProcessor.updateConfig(newConfig) }
 

@@ -6,11 +6,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.sensortracking.data.PDRConfig
 import com.example.sensortracking.data.Position
 import com.example.sensortracking.data.PathSegment
+import com.example.sensortracking.data.WarehouseMap
 import com.example.sensortracking.sensor.pdr.PDRProcessor
 import com.example.sensortracking.sensor.pdr.PDRSensorManager
 import com.example.sensortracking.sensor.calibration.CalibrationType
 import com.example.sensortracking.sensor.log.LogAnalyzer
 import com.example.sensortracking.sensor.log.PathReconstructor
+import com.example.sensortracking.sensor.pdr.WarehouseMapProcessor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,12 +27,12 @@ class TrackScreenViewModel : ViewModel() {
     private var pdrSensorManager: PDRSensorManager? = null
     private var logAnalyzer: LogAnalyzer? = null
     private var pathReconstructor: PathReconstructor? = null
-    private var warehouseMapProcessor: com.example.sensortracking.sensor.pdr.WarehouseMapProcessor? = null
+    private var warehouseMapProcessor: WarehouseMapProcessor? = null
     
     private var isInitialized = false
     
     fun onZoomChange(newZoom: Float) {
-        _uiState.update { it.copy(zoom = newZoom.coerceIn(0.5f, 5f)) }
+        _uiState.update { it.copy(zoom = newZoom.coerceIn(0.5f, 3.0f)) }
     }
     
     fun setArea(length: Float, width: Float) {
@@ -40,8 +42,8 @@ class TrackScreenViewModel : ViewModel() {
     
     fun setInitialPosition(x: Float, y: Float) {
         val warehouseMap = _uiState.value.warehouseMap
-        val maxX = if (warehouseMap != null) warehouseMap.width.toFloat() else _uiState.value.area.length
-        val maxY = if (warehouseMap != null) warehouseMap.height.toFloat() else _uiState.value.area.width
+        val maxX = warehouseMap?.width?.toFloat() ?: _uiState.value.area.length
+        val maxY = warehouseMap?.height?.toFloat() ?: _uiState.value.area.width
         
         val clampedX = x.coerceIn(0f, maxX)
         val clampedY = y.coerceIn(0f, maxY)
@@ -54,8 +56,8 @@ class TrackScreenViewModel : ViewModel() {
 
     fun setCalibratedPosition(x: Float, y: Float, calibrationType: CalibrationType) {
         val warehouseMap = _uiState.value.warehouseMap
-        val maxX = if (warehouseMap != null) warehouseMap.width.toFloat() else _uiState.value.area.length
-        val maxY = if (warehouseMap != null) warehouseMap.height.toFloat() else _uiState.value.area.width
+        val maxX = warehouseMap?.width?.toFloat() ?: _uiState.value.area.length
+        val maxY = warehouseMap?.height?.toFloat() ?: _uiState.value.area.width
         
         val clampedX = x.coerceIn(0f, maxX)
         val clampedY = y.coerceIn(0f, maxY)
@@ -114,7 +116,7 @@ class TrackScreenViewModel : ViewModel() {
         )
         logAnalyzer = LogAnalyzer(_uiState.value.pdrConfig.headingTolerance)
         pathReconstructor = PathReconstructor()
-        warehouseMapProcessor = com.example.sensortracking.sensor.pdr.WarehouseMapProcessor()
+        warehouseMapProcessor = WarehouseMapProcessor()
     }
     
     private fun observePDRData() {
@@ -178,16 +180,8 @@ class TrackScreenViewModel : ViewModel() {
         val pathHistory = getPathHistory()
         return logAnalyzer?.analyzePath(pathHistory) ?: emptyList()
     }
-    
-    fun loadWarehouseMap(excelData: Array<Array<String>>) {
-        warehouseMapProcessor?.let { processor ->
-            val warehouseMap = processor.parseWarehouseMap(excelData)
-            _uiState.update { it.copy(warehouseMap = warehouseMap) }
-            pdrProcessor?.setWarehouseMap(warehouseMap)
-        }
-    }
-    
-    fun loadWarehouseMap(warehouseMap: com.example.sensortracking.data.WarehouseMap) {
+
+    fun loadWarehouseMap(warehouseMap: WarehouseMap) {
         _uiState.update { it.copy(warehouseMap = warehouseMap) }
         pdrProcessor?.setWarehouseMap(warehouseMap)
     }

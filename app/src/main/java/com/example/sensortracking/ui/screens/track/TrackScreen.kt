@@ -186,7 +186,7 @@ fun TrackScreen(
         )
     }
 
-    val minZoom = 0.0f
+    val minZoom = 0.5f
     val maxZoom = 3.0f
     
     Scaffold(

@@ -4,12 +4,12 @@ import com.example.sensortracking.data.StepData
 import com.example.sensortracking.data.PDRConfig
 import kotlin.math.sqrt
 
+// Threshold-based detection
 class StepDetector(private var config: PDRConfig) {
     private var lastStepTime: Long = 0
     private var lastMagnitude: Float = 0f
     private var stepCount = 0
 
-    // Threshold-based detection
     private val stepThreshold = config.stepThreshold
     private val stepCooldownMs = config.stepCooldownMs
 
@@ -26,7 +26,7 @@ class StepDetector(private var config: PDRConfig) {
             return StepData(
                 timestamp = timestamp,
                 magnitude = magnitude,
-                confidence = 0.8f // High confidence for threshold-based detection
+                confidence = 0.8f
             )
         }
         lastMagnitude = magnitude
@@ -46,6 +46,6 @@ class StepDetector(private var config: PDRConfig) {
     }
 
     fun updateConfig(newConfig: PDRConfig) {
-        // Config is already used in detectStep method
+        // Not needed for threshold-based detection
     }
 } 

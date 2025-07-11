@@ -23,22 +23,23 @@ fun GridFloorPlanArea(
     pathHistory: List<com.example.sensortracking.data.Position> = emptyList(),
     warehouseMap: com.example.sensortracking.data.WarehouseMap? = null
 ) {
-    // Use warehouse map dimensions if available, otherwise use area dimensions
     val horizontalBoxes = if (warehouseMap != null) warehouseMap.width else area.length.roundToInt().coerceAtLeast(1)
     val verticalBoxes = if (warehouseMap != null) warehouseMap.height else area.width.roundToInt().coerceAtLeast(1)
+
+    val maxX = if (warehouseMap != null) warehouseMap.width.toFloat() else area.length
+    val maxY = if (warehouseMap != null) warehouseMap.height.toFloat() else area.width
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .pointerInput(zoom) {
                 detectTransformGestures { _, _, zoomChange, _ ->
-                    val newZoom = (zoom * zoomChange).coerceIn(0.0f, 3.0f)
+                    val newZoom = (zoom * zoomChange).coerceIn(0.5f, 3.0f)
                     onZoomChange(newZoom)
                 }
             },
         contentAlignment = Alignment.Center
     ) {
-        // Draw grid using Canvas, apply zoom only
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
@@ -47,51 +48,53 @@ fun GridFloorPlanArea(
                     scaleY = zoom
                 }
         ) {
-            // Calculate square cell size
             val cellSize = minOf(size.width / horizontalBoxes, size.height / verticalBoxes)
             val gridWidth = cellSize * horizontalBoxes
             val gridHeight = cellSize * verticalBoxes
             val startX = (size.width - gridWidth) / 2f
             val startY = (size.height - gridHeight) / 2f
 
-            // Draw warehouse map if available, otherwise draw grid
+            val userX = (userPosition.x / maxX) * gridWidth
+            val userY = (userPosition.y / maxY) * gridHeight
+
+            val centerX = size.width / 2f
+            val centerY = size.height / 2f
+
+            val offsetX = centerX - (startX + userX)
+            val offsetY = centerY - (startY + userY)
+
             if (warehouseMap != null) {
-                drawWarehouseMap(warehouseMap, startX, startY, cellSize)
+                drawWarehouseMap(warehouseMap, startX + offsetX, startY + offsetY, cellSize)
             } else {
-                // Draw grid lines
                 for (i in 0..horizontalBoxes) {
-                    val x = startX + i * cellSize
+                    val x = startX + offsetX + i * cellSize
                     drawLine(
                         color = Color.Black,
-                        start = Offset(x, startY),
-                        end = Offset(x, startY + gridHeight),
+                        start = Offset(x, startY + offsetY),
+                        end = Offset(x, startY + offsetY + gridHeight),
                         strokeWidth = 2f
                     )
                 }
                 for (j in 0..verticalBoxes) {
-                    val y = startY + j * cellSize
+                    val y = startY + offsetY + j * cellSize
                     drawLine(
                         color = Color.Black,
-                        start = Offset(startX, y),
-                        end = Offset(startX + gridWidth, y),
+                        start = Offset(startX + offsetX, y),
+                        end = Offset(startX + offsetX + gridWidth, y),
                         strokeWidth = 2f
                     )
                 }
             }
 
-            // Draw path history
             if (pathHistory.size > 1) {
                 for (i in 1 until pathHistory.size) {
                     val prev = pathHistory[i - 1]
                     val curr = pathHistory[i]
 
-                    val maxX = if (warehouseMap != null) warehouseMap.width.toFloat() else area.length
-                    val maxY = if (warehouseMap != null) warehouseMap.height.toFloat() else area.width
-
-                    val prevX = startX + (prev.x / maxX) * gridWidth
-                    val prevY = startY + (prev.y / maxY) * gridHeight
-                    val currX = startX + (curr.x / maxX) * gridWidth
-                    val currY = startY + (curr.y / maxY) * gridHeight
+                    val prevX = startX + offsetX + (prev.x / maxX) * gridWidth
+                    val prevY = startY + offsetY + (prev.y / maxY) * gridHeight
+                    val currX = startX + offsetX + (curr.x / maxX) * gridWidth
+                    val currY = startY + offsetY + (curr.y / maxY) * gridHeight
 
                     drawLine(
                         color = Color.Blue,
@@ -102,13 +105,9 @@ fun GridFloorPlanArea(
                 }
             }
 
-            // current position
-            val maxX = if (warehouseMap != null) warehouseMap.width.toFloat() else area.length
-            val maxY = if (warehouseMap != null) warehouseMap.height.toFloat() else area.width
-            val posX = startX + (userPosition.x / maxX) * gridWidth
-            val posY = startY + (userPosition.y / maxY) * gridHeight
+            val posX = startX + offsetX + (userPosition.x / maxX) * gridWidth
+            val posY = startY + offsetY + (userPosition.y / maxY) * gridHeight
 
-            // position indicator
             drawCircle(color = Color.Red, radius = 8f, center = Offset(posX, posY))
         }
     }
@@ -127,33 +126,25 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWarehouseMap(
             val cellY = startY + y * cellSize
             
             val color = when (cell.cellType) {
-                com.example.sensortracking.data.CellType.STORAGE -> Color(0xFF4CAF50) // Green
-                com.example.sensortracking.data.CellType.AISLE -> Color(0xFF2196F3) // Blue
-                com.example.sensortracking.data.CellType.WALL -> Color(0xFF9E9E9E) // Gray
-                com.example.sensortracking.data.CellType.START -> Color(0xFF4CAF50) // Green
-                com.example.sensortracking.data.CellType.END -> Color(0xFFF44336) // Red
+                com.example.sensortracking.data.CellType.STORAGE -> Color(0xFF4CAF50)
+                com.example.sensortracking.data.CellType.AISLE -> Color(0xFF2196F3)
+                com.example.sensortracking.data.CellType.WALL -> Color(0xFF9E9E9E)
+                com.example.sensortracking.data.CellType.START -> Color(0xFF4CAF50)
+                com.example.sensortracking.data.CellType.END -> Color(0xFFF44336)
             }
             
-            // Draw cell background
             drawRect(
                 color = color,
                 topLeft = androidx.compose.ui.geometry.Offset(cellX, cellY),
                 size = androidx.compose.ui.geometry.Size(cellSize, cellSize)
             )
             
-            // Draw cell border
             drawRect(
                 color = Color.Black,
                 topLeft = androidx.compose.ui.geometry.Offset(cellX, cellY),
                 size = androidx.compose.ui.geometry.Size(cellSize, cellSize),
                 style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f)
             )
-            
-            // Draw storage location labels
-            if (cell.storageLocation != null) {
-                // Note: Text drawing would require additional setup
-                // For now, we'll just use colored rectangles
-            }
         }
     }
 }

@@ -7,8 +7,7 @@ data class WarehouseCell(
     val x: Int,
     val y: Int,
     val cellType: CellType,
-    val storageLocation: String? = null,
-    val aisleRestrictions: Set<AisleRestriction> = emptySet()
+    val storageLocation: String? = null
 )
 
 enum class CellType {
@@ -17,10 +16,6 @@ enum class CellType {
     WALL,         // Non-walkable wall/obstacle
     START,        // Starting point
     END           // Ending point
-}
-
-enum class AisleRestriction {
-    LEFT, RIGHT, UP, DOWN
 }
 
 /**

@@ -23,9 +23,8 @@ class StrideEstimator(private var config: PDRConfig) {
         
         val strideLength = estimateWeinbergStride()
         val confidence = calculateConfidence(accelerationBuffer)
-        
-        // Update history
-        if (timestamp - lastStrideTime > 1000) { // Only update every second
+
+        if (timestamp - lastStrideTime > 1000) { // update every second
             strideHistory.add(strideLength)
             if (strideHistory.size > maxHistorySize) {
                 strideHistory.removeAt(0)
@@ -84,7 +83,7 @@ class StrideEstimator(private var config: PDRConfig) {
         val variance = calculateVariance(buffer)
         val amplitude = calculateAmplitude(buffer)
         
-        // Higher variance and amplitude indicate better signal quality
+        // Higher variance and amplitude = better signal quality
         var confidence = 0.5f
         
         if (variance > 0.5f) confidence += 0.2f

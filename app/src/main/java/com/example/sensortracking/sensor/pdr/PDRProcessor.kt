@@ -19,13 +19,11 @@ class PDRProcessor(
     private val areaBounds: AreaBounds,
     private var warehouseMap: WarehouseMap? = null
 ) {
-    // initializing components for PDR
     private val stepDetector = StepDetector(config)
     private val strideEstimator = StrideEstimator(config)
     private val headingEstimator = HeadingEstimator(config)
     private val warehouseMapProcessor = WarehouseMapProcessor()
     
-    // Current state
     private var currentPosition = Position(0f, 0f)
     private var currentHeading = HeadingData(0f, 0f)
     private var stepCount = 0
@@ -55,29 +53,21 @@ class PDRProcessor(
     
     fun processSensorData(accelerometer: FloatArray, timestamp: Long): PDRData {
         currentHeading = headingEstimator.estimateHeading()
-        
         if (!isTracking) {
             return getCurrentPDRData()
         }
-        
         val stepData = stepDetector.detectStep(accelerometer, timestamp)
-        
         if (stepData != null) {
             val strideData = strideEstimator.estimateStride(accelerometer, timestamp)
-            
             // Cache stride confidence for later use
             lastStrideConfidence = strideData.confidence
             lastStrideTimestamp = timestamp
-            
             updatePosition(strideData.length)
-            
             stepCount++
             totalDistance += strideData.length
             lastStepData = stepData
-            
             addToPathHistory(currentPosition)
         }
-
         return getCurrentPDRData()
     }
     
@@ -87,7 +77,7 @@ class PDRProcessor(
         
         // Calculate position delta
         val deltaX = strideLength * sin(headingRadians).toFloat()
-        val deltaY = -strideLength * cos(headingRadians).toFloat() // Negative for correct coordinate system
+        val deltaY = -strideLength * cos(headingRadians).toFloat() // (-) for correct coordinate system
         
         val newPosition = Position(
             x = currentPosition.x + deltaX,
@@ -98,14 +88,9 @@ class PDRProcessor(
         val validatedPosition = if (warehouseMap != null) {
             warehouseMapProcessor.validateMovement(warehouseMap!!, currentPosition, newPosition)
         } else {
-            // Fallback to area bounds validation
-            if (areaBounds.contains(newPosition)) {
-                newPosition
-            } else {
-                areaBounds.clamp(newPosition)
-            }
+            if (areaBounds.contains(newPosition)) { newPosition }
+            else { areaBounds.clamp(newPosition) }
         }
-        
         currentPosition = validatedPosition
     }
     
@@ -124,50 +109,29 @@ class PDRProcessor(
     private fun calculateOverallConfidence(): Float {
         var confidence = 0f
         var count = 0
-        
         lastStepData?.let {
             confidence += it.confidence
             count += 1
         }
-        
         confidence += currentHeading.confidence
         count += 1
-        
         if (lastStrideTimestamp > 0) {
             confidence += lastStrideConfidence
             count += 1
         }
-
         return confidence / count
     }
 
     fun startTracking(initialPosition: Position) {
-        currentPosition = if (areaBounds.contains(initialPosition)) {
-            initialPosition
-        } else {
-            areaBounds.clamp(initialPosition)
-        }
-        
-        stepDetector.reset()
-        strideEstimator.reset()
-        headingEstimator.reset()
-        
-        // Reset state
-        stepCount = 0
-        totalDistance = 0f
-        pathHistory.clear()
-        pathHistory.add(currentPosition)
-        
-        // Reset cached values
-        lastStrideConfidence = 0f
-        lastStrideTimestamp = 0L
-        
-        isTracking = true
+        reset()
+        setInitialPosition(initialPosition)
     }
 
     fun resumeTracking() { isTracking = true } // Resume tracking without clearing path history
 
     fun stopTracking() { isTracking = false }
+
+    fun setWarehouseMap(map: WarehouseMap?) { warehouseMap = map }
 
     fun setInitialPosition(position: Position) {
         currentPosition = if (areaBounds.contains(position)) {
@@ -207,10 +171,6 @@ class PDRProcessor(
         stepDetector.updateConfig(newConfig)
         strideEstimator.updateConfig(newConfig)
         headingEstimator.updateConfig(newConfig)
-    }
-    
-    fun setWarehouseMap(map: WarehouseMap?) {
-        warehouseMap = map
     }
 
     fun reset() {
