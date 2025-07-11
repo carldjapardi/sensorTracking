@@ -5,8 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sensortracking.data.PDRConfig
 import com.example.sensortracking.data.Position
+import com.example.sensortracking.data.PathSegment
 import com.example.sensortracking.sensor.pdr.PDRProcessor
 import com.example.sensortracking.sensor.pdr.PDRSensorManager
+import com.example.sensortracking.sensor.calibration.CalibrationType
+import com.example.sensortracking.sensor.log.LogAnalyzer
+import com.example.sensortracking.sensor.log.PathReconstructor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +23,8 @@ class TrackScreenViewModel : ViewModel() {
 
     private var pdrProcessor: PDRProcessor? = null
     private var pdrSensorManager: PDRSensorManager? = null
+    private var logAnalyzer: LogAnalyzer? = null
+    private var pathReconstructor: PathReconstructor? = null
     
     private var isInitialized = false
     
@@ -41,10 +47,10 @@ class TrackScreenViewModel : ViewModel() {
         }
     }
 
-    fun setCalibratedPosition(x: Float, y: Float) {
+    fun setCalibratedPosition(x: Float, y: Float, calibrationType: CalibrationType) {
         val clampedX = x.coerceIn(0f, _uiState.value.area.length)
         val clampedY = y.coerceIn(0f, _uiState.value.area.width)
-        pdrSensorManager?.calibratePosition(Position(clampedX, clampedY))
+        pdrSensorManager?.calibratePosition(Position(clampedX, clampedY), calibrationType)
     }
     
     fun initializeSensors(context: Context) {
@@ -80,6 +86,8 @@ class TrackScreenViewModel : ViewModel() {
         val area = _uiState.value.area
         val bounds = PDRProcessor.AreaBounds(minX = 0f, maxX = area.length, minY = 0f, maxY = area.width)
         pdrProcessor = PDRProcessor(config = _uiState.value.pdrConfig, areaBounds = bounds)
+        logAnalyzer = LogAnalyzer(_uiState.value.pdrConfig.headingTolerance)
+        pathReconstructor = PathReconstructor()
     }
     
     private fun observePDRData() {
@@ -137,6 +145,20 @@ class TrackScreenViewModel : ViewModel() {
     
     fun getPathHistory(): List<Position> {
         return pdrSensorManager?.getPathHistory() ?: emptyList()
+    }
+    
+    fun getPathSegments(): List<PathSegment> {
+        val pathHistory = getPathHistory()
+        return logAnalyzer?.analyzePath(pathHistory) ?: emptyList()
+    }
+    
+    fun updatePathSegment(index: Int, newSegment: PathSegment) {
+        val segments = getPathSegments().toMutableList()
+        if (index in segments.indices) {
+            segments[index] = newSegment
+            val newPath = pathReconstructor?.reconstructPath(segments, Position(0f, 0f)) ?: emptyList()
+            pdrSensorManager?.updatePathHistory(newPath)
+        }
     }
     
     override fun onCleared() {

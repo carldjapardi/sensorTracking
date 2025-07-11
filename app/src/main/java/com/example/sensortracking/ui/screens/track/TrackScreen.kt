@@ -42,6 +42,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.example.sensortracking.data.PathSegment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -71,6 +72,7 @@ fun TrackScreen(
     var showStartDialog by remember { mutableStateOf(false) }
     var showAreaDialog by remember { mutableStateOf(false) }
     var showInitialPositionDialog by remember { mutableStateOf(false) }
+    var showEditSegmentDialog by remember { mutableStateOf<PathSegment?>(null) }
     var lastDialogTrigger by remember { mutableStateOf(-1) }
     
     // Temporary state for dialogs
@@ -156,6 +158,21 @@ fun TrackScreen(
         SaveTrackingDialog(
             viewModel = viewModel,
             onDismiss = { showSaveTrackingDialog = false })
+    }
+    
+    if (showEditSegmentDialog != null) {
+        EditPathSegmentDialog(
+            segment = showEditSegmentDialog!!,
+            onConfirm = { newSegment ->
+                val segments = viewModel.getPathSegments()
+                val index = segments.indexOf(showEditSegmentDialog)
+                if (index != -1) {
+                    viewModel.updatePathSegment(index, newSegment)
+                }
+                showEditSegmentDialog = null
+            },
+            onDismiss = { showEditSegmentDialog = null }
+        )
     }
 
     // ===== MAIN UI =====
@@ -274,6 +291,12 @@ fun TrackScreen(
                     if (pdrExpanded) { CombinedPDRDataDisplay(uiState = uiState) }
                 }
             }
+            
+            // 5. Log History Display
+            LogHistoryDisplay(
+                segments = viewModel.getPathSegments(),
+                onSegmentUpdate = { _, segment -> showEditSegmentDialog = segment }
+            )
         }
     }
 }

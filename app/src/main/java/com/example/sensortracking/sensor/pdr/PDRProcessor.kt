@@ -5,6 +5,8 @@ import com.example.sensortracking.data.PDRConfig
 import com.example.sensortracking.data.PDRData
 import com.example.sensortracking.data.Position
 import com.example.sensortracking.data.StepData
+import com.example.sensortracking.sensor.calibration.CalibrationManager
+import com.example.sensortracking.sensor.calibration.CalibrationType
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -26,6 +28,7 @@ class PDRProcessor(private val config: PDRConfig = PDRConfig(), private val area
     private var lastStepData: StepData? = null
     
     private val pathHistory = ArrayList<Position>()
+    private val calibrationManager = CalibrationManager()
     
     private var lastStrideConfidence = 0f
     private var lastStrideTimestamp = 0L
@@ -163,17 +166,25 @@ class PDRProcessor(private val config: PDRConfig = PDRConfig(), private val area
         pathHistory.add(currentPosition)
     }
 
-    fun calibratePosition(position: Position) {
+    fun calibratePosition(position: Position, calibrationType: CalibrationType) {
         val previousPosition = currentPosition
         currentPosition = if (areaBounds.contains(position)) {
             position
         } else {
             areaBounds.clamp(position)
         }
-        addToPathHistory(currentPosition)
+        calibrationManager.calibrate(previousPosition, currentPosition, pathHistory, calibrationType)
     }
 
     fun getPathHistory(): List<Position> = pathHistory.toList()
+    
+    fun updatePathHistory(newPath: List<Position>) {
+        pathHistory.clear()
+        pathHistory.addAll(newPath)
+        if (newPath.isNotEmpty()) {
+            currentPosition = newPath.last()
+        }
+    }
 
     fun updateRotationVector(rotationVector: FloatArray) {
         headingEstimator.updateRotationVector(rotationVector)

@@ -16,12 +16,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.sensortracking.ui.screens.track.TrackScreenViewModel
+import com.example.sensortracking.sensor.calibration.CalibrationType
 
 @Composable
 fun CalibratePositionDialog(viewModel: TrackScreenViewModel, onDismiss: () -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
     var xPos by remember { mutableStateOf(uiState.currentPosition.x.toString()) }
     var yPos by remember { mutableStateOf(uiState.currentPosition.y.toString()) }
+    var selectedCalibrationType: CalibrationType by remember { mutableStateOf(CalibrationType.AddLine) }
 
     val areaLength = uiState.area.length.toInt()
     val areaWidth = uiState.area.width.toInt()
@@ -34,20 +36,46 @@ fun CalibratePositionDialog(viewModel: TrackScreenViewModel, onDismiss: () -> Un
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Set your current position within the area (${areaLength}m x ${areaWidth}m):")
-                Text("Current Position: (${currentXPos.toFixed(1)}, ${currentYPos.toFixed(1)})")
+                Text("Current Position: (${currentXPos.toFixed(2)}, ${currentYPos.toFixed(2)})")
 
                 Text("X Position (0-${areaLength}m):")
-                OutlinedTextField(value = xPos, onValueChange = { xPos = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = xPos,
+                    onValueChange = { xPos = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
 
                 Text("Y Position (0-${areaWidth}m):")
-                OutlinedTextField(value = yPos, onValueChange = { yPos = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = yPos,
+                    onValueChange = { yPos = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Text("Calibration Type:")
+                Column {
+                    listOf(
+                        CalibrationType.AddLine to "Add Line",
+                        CalibrationType.SetPosition to "Set Position", 
+                        CalibrationType.ShiftPath to "Shift Path"
+                    ).forEach { (type, label) ->
+                        Button(
+                            onClick = { selectedCalibrationType = type },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(if (selectedCalibrationType == type) "✓ $label" else label)
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
             Button(onClick = {
                 val x = xPos.toFloatOrNull() ?: currentXPos
                 val y = yPos.toFloatOrNull() ?: currentYPos
-                viewModel.setCalibratedPosition(x, y)
+                viewModel.setCalibratedPosition(x, y, selectedCalibrationType)
                 onDismiss()
             }) { Text("Calibrate") }
         },

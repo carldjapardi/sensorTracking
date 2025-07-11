@@ -9,6 +9,7 @@ import android.util.Log
 import com.example.sensortracking.data.PDRConfig
 import com.example.sensortracking.data.PDRData
 import com.example.sensortracking.data.Position
+import com.example.sensortracking.sensor.calibration.CalibrationType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -86,11 +87,15 @@ class PDRSensorManager(private val context: Context, private val pdrProcessor: P
 
     fun setInitialPosition(position: Position) { pdrProcessor.setInitialPosition(position) }
 
-    fun calibratePosition(position: Position) { pdrProcessor.calibratePosition(position) }
+    fun calibratePosition(position: Position, calibrationType: CalibrationType) {
+        pdrProcessor.calibratePosition(position, calibrationType) 
+    }
 
     fun updateConfig(newConfig: PDRConfig) { pdrProcessor.updateConfig(newConfig) }
 
     fun getPathHistory(): List<Position> { return pdrProcessor.getPathHistory() }
+    
+    fun updatePathHistory(newPath: List<Position>) { pdrProcessor.updatePathHistory(newPath) }
 
     fun getSensorAvailability(): SensorAvailability {
         return SensorAvailability(
