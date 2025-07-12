@@ -8,26 +8,31 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import com.example.sensortracking.data.CellType
+import com.example.sensortracking.data.Position
+import com.example.sensortracking.data.WarehouseMap
 import kotlin.math.roundToInt
 
 @Composable
 fun GridFloorPlanArea(
     zoom: Float,
     onZoomChange: (Float) -> Unit,
-    userPosition: com.example.sensortracking.data.Position,
-    floorPlan: Any?,
+    userPosition: Position,
     area: Area,
-    pathHistory: List<com.example.sensortracking.data.Position> = emptyList(),
-    warehouseMap: com.example.sensortracking.data.WarehouseMap? = null
+    pathHistory: List<Position> = emptyList(),
+    warehouseMap: WarehouseMap? = null
 ) {
-    val horizontalBoxes = if (warehouseMap != null) warehouseMap.width else area.length.roundToInt().coerceAtLeast(1)
-    val verticalBoxes = if (warehouseMap != null) warehouseMap.height else area.width.roundToInt().coerceAtLeast(1)
+    val horizontalBoxes = warehouseMap?.width ?: area.length.roundToInt().coerceAtLeast(1)
+    val verticalBoxes = warehouseMap?.height ?: area.width.roundToInt().coerceAtLeast(1)
 
-    val maxX = if (warehouseMap != null) warehouseMap.width.toFloat() else area.length
-    val maxY = if (warehouseMap != null) warehouseMap.height.toFloat() else area.width
+    val maxX = warehouseMap?.width?.toFloat() ?: area.length
+    val maxY = warehouseMap?.height?.toFloat() ?: area.width
 
     Box(
         modifier = Modifier
@@ -113,8 +118,8 @@ fun GridFloorPlanArea(
     }
 }
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWarehouseMap(
-    warehouseMap: com.example.sensortracking.data.WarehouseMap,
+private fun DrawScope.drawWarehouseMap(
+    warehouseMap: WarehouseMap,
     startX: Float,
     startY: Float,
     cellSize: Float
@@ -126,24 +131,24 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWarehouseMap(
             val cellY = startY + y * cellSize
             
             val color = when (cell.cellType) {
-                com.example.sensortracking.data.CellType.STORAGE -> Color(0xFF4CAF50)
-                com.example.sensortracking.data.CellType.AISLE -> Color(0xFF2196F3)
-                com.example.sensortracking.data.CellType.WALL -> Color(0xFF9E9E9E)
-                com.example.sensortracking.data.CellType.START -> Color(0xFF4CAF50)
-                com.example.sensortracking.data.CellType.END -> Color(0xFFF44336)
+                CellType.STORAGE -> Color(0xFF4CAF50)
+                CellType.AISLE -> Color(0xFF2196F3)
+                CellType.WALL -> Color(0xFF9E9E9E)
+                CellType.START -> Color(0xFF4CAF50)
+                CellType.END -> Color(0xFFF44336)
             }
             
             drawRect(
                 color = color,
-                topLeft = androidx.compose.ui.geometry.Offset(cellX, cellY),
-                size = androidx.compose.ui.geometry.Size(cellSize, cellSize)
+                topLeft = Offset(cellX, cellY),
+                size = Size(cellSize, cellSize)
             )
             
             drawRect(
                 color = Color.Black,
-                topLeft = androidx.compose.ui.geometry.Offset(cellX, cellY),
-                size = androidx.compose.ui.geometry.Size(cellSize, cellSize),
-                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f)
+                topLeft = Offset(cellX, cellY),
+                size = Size(cellSize, cellSize),
+                style = Stroke(width = 1f)
             )
         }
     }

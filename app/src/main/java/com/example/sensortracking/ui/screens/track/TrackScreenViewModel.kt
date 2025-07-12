@@ -97,16 +97,17 @@ class TrackScreenViewModel : ViewModel() {
         val area = _uiState.value.area
         val warehouseMap = _uiState.value.warehouseMap
         
-        // Use warehouse map bounds if available, otherwise use area bounds
+        // Check for floor plan if selected, else normal grid walls
         val bounds = if (warehouseMap != null) {
             PDRProcessor.AreaBounds(
-                minX = 0f, 
-                maxX = warehouseMap.width.toFloat(), 
-                minY = 0f, 
-                maxY = warehouseMap.height.toFloat()
+                minX = 0f, maxX = warehouseMap.width.toFloat(),
+                minY = 0f, maxY = warehouseMap.height.toFloat()
             )
         } else {
-            PDRProcessor.AreaBounds(minX = 0f, maxX = area.length, minY = 0f, maxY = area.width)
+            PDRProcessor.AreaBounds(
+                minX = 0f, maxX = area.length,
+                minY = 0f, maxY = area.width
+            )
         }
         
         pdrProcessor = PDRProcessor(

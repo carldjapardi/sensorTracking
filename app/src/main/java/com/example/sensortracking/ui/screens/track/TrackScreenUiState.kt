@@ -3,19 +3,14 @@ package com.example.sensortracking.ui.screens.track
 import com.example.sensortracking.data.PDRData
 import com.example.sensortracking.data.Position
 import com.example.sensortracking.data.PDRConfig
+import com.example.sensortracking.data.WarehouseMap
 
 data class Area(val length: Float = 10f, val width: Float = 10f)
-
-data class InitialPosition(
-    val x: Float = 0f,
-    val y: Float = 0f
-)
 
 data class TrackScreenUiState(
     val zoom: Float = 1f,
     val area: Area = Area(),
-    val floorPlan: Any? = null, // Placeholder for floor plan image or grid data
-    val warehouseMap: com.example.sensortracking.data.WarehouseMap? = null,
+    val warehouseMap: WarehouseMap? = null,
     
     // PDR Data
     val pdrData: PDRData? = null,

@@ -82,17 +82,10 @@ fun TrackScreen(
     var tempWidth by remember { mutableStateOf(uiState.area.width.toInt().toString()) }
     
     LaunchedEffect(selectedFloorPlan) {
-        selectedFloorPlan?.let { floorPlan ->
-            viewModel.loadWarehouseMap(floorPlan)
-        }
+        selectedFloorPlan?.let { floorPlan -> viewModel.loadWarehouseMap(floorPlan) }
     }
 
     LaunchedEffect(Unit) { viewModel.initializeSensors(context) }
-
-    if (showStartDialogOnNav != lastDialogTrigger) {
-        lastDialogTrigger = showStartDialogOnNav
-        showStartDialog = true
-    }
 
     LaunchedEffect(uiState.isError, uiState.errorMessage) {
         if (uiState.isError && uiState.errorMessage != null) {
@@ -101,11 +94,15 @@ fun TrackScreen(
         }
     }
 
+    // CONDITIONS FOR DIALOGS
+    if (showStartDialogOnNav != lastDialogTrigger) {
+        lastDialogTrigger = showStartDialogOnNav
+        showStartDialog = true
+    }
+
     if (showStartDialog) {
         StartTrackingDialog(
-            onSelectFloorPlan = { 
-                navController?.navigate("upload")
-            },
+            onSelectFloorPlan = { navController?.navigate("upload") },
             onUploadFloorPlan = { /* TODO: Upload new floor plan */ },
             onNoFloorPlan = {
                 viewModel.clearWarehouseMap()
@@ -188,7 +185,8 @@ fun TrackScreen(
 
     val minZoom = 0.5f
     val maxZoom = 3.0f
-    
+
+    // MAIN UI
     Scaffold(
         topBar = {
             TopAppBar(
@@ -202,6 +200,7 @@ fun TrackScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
+        // 1. Grid / Map
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding).verticalScroll(scrollState)) {
             Box(modifier = Modifier.fillMaxWidth().height(350.dp).padding(8.dp).clip(RoundedCornerShape(12.dp)).background(Color.LightGray)) {
                 GridFloorPlanArea(
@@ -211,13 +210,13 @@ fun TrackScreen(
                         viewModel.onZoomChange(clamped)
                     },
                     userPosition = uiState.currentPosition,
-                    floorPlan = uiState.floorPlan,
                     area = uiState.area,
                     pathHistory = viewModel.getPathHistory(),
                     warehouseMap = uiState.warehouseMap
                 )
             }
 
+            // 2. New/Save Tracking, Zoom Controls, Area Info
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -262,6 +261,7 @@ fun TrackScreen(
                 }
             }
 
+            // 3. Start/Stop Tracking & Calibrate Position
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -278,13 +278,15 @@ fun TrackScreen(
                 Button(
                     modifier = Modifier.width(140.dp).height(50.dp),
                     onClick = {
-                    if (uiState.isTracking) { viewModel.pauseTracking() }
-                    showCalibrateDialog = true }
+                        if (uiState.isTracking) { viewModel.pauseTracking() }
+                        showCalibrateDialog = true
+                    }
                 ) {
                     Text("Calibrate Pos")
                 }
             }
-            
+
+            // 4. PDR Data
             var pdrExpanded by remember { mutableStateOf(true) }
             Card(modifier = Modifier.fillMaxWidth().padding(8.dp), shape = RoundedCornerShape(12.dp)) {
                 Column {
@@ -301,7 +303,8 @@ fun TrackScreen(
                     if (pdrExpanded) { CombinedPDRDataDisplay(uiState = uiState) }
                 }
             }
-            
+
+            // 5. Log History
             LogHistoryDisplay(
                 segments = viewModel.getPathSegments(),
                 onSegmentUpdate = { _, segment -> showEditSegmentDialog = segment }

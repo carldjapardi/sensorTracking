@@ -1,7 +1,9 @@
 package com.example.sensortracking.sensor.pdr
 
-import com.example.sensortracking.data.*
-import kotlin.math.roundToInt
+import com.example.sensortracking.data.CellType
+import com.example.sensortracking.data.Position
+import com.example.sensortracking.data.WarehouseCell
+import com.example.sensortracking.data.WarehouseMap
 
 /**
  * Parses specified csv data format and validates movements within a warehouse map.
@@ -54,7 +56,7 @@ class WarehouseMapProcessor {
             y = newPos.y.coerceIn(0f, warehouseMap.height - 1f)
         )
         val cell = warehouseMap.getCellAt(clampedPos)
-        if (cell?.cellType == CellType.STORAGE || cell?.cellType == CellType.WALL) {
+        if (cell.cellType == CellType.STORAGE || cell.cellType == CellType.WALL) {
             return currPos
         }
         return clampedPos

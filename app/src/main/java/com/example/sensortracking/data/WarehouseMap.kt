@@ -1,8 +1,5 @@
 package com.example.sensortracking.data
 
-/**
- * Represents a warehouse map cell with its properties
- */
 data class WarehouseCell(
     val x: Int,
     val y: Int,
@@ -11,16 +8,13 @@ data class WarehouseCell(
 )
 
 enum class CellType {
-    STORAGE,      // Storage location (B02, C80, etc.)
+    STORAGE,      // Non-walkable Storage location (B02, C80, etc.)
     AISLE,        // Walkable aisle space
     WALL,         // Non-walkable wall/obstacle
     START,        // Starting point
     END           // Ending point
 }
 
-/**
- * Warehouse map representation with collision detection
- */
 data class WarehouseMap(
     val width: Int,
     val height: Int,
@@ -34,7 +28,7 @@ data class WarehouseMap(
         return cells[y][x].cellType != CellType.WALL
     }
     
-    fun getCellAt(position: Position): WarehouseCell? {
+    fun getCellAt(position: Position): WarehouseCell {
         val x = position.x.toInt().coerceIn(0, width - 1)
         val y = position.y.toInt().coerceIn(0, height - 1)
         return cells[y][x]

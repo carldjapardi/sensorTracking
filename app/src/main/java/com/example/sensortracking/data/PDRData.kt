@@ -1,8 +1,5 @@
 package com.example.sensortracking.data
 
-/**
- * Represents a 2D position in the tracking area
- */
 data class Position(
     val x: Float,
     val y: Float
@@ -19,12 +16,9 @@ data class StrideData(
     val confidence: Float
 )
 
-/**
- * Represents heading/orientation data
- */
 data class HeadingData(
     val heading: Float, // in degrees, 0-360
-    val confidence: Float,
+    val confidence: Float, // 0 to 100%
 )
 
 data class PDRData(

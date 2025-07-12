@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.sensortracking.data.PathSegment
 import com.example.sensortracking.data.TurnDirection
+import com.example.sensortracking.sensor.math.toFixed
 
 @Composable
 fun LogHistoryDisplay(
@@ -51,7 +52,6 @@ fun LogHistoryDisplay(
                     contentDescription = null
                 )
             }
-            
             if (expanded) {
                 LazyColumn(
                     modifier = Modifier.height(200.dp).padding(horizontal = 12.dp),
@@ -93,5 +93,3 @@ fun LogEntry(
         style = MaterialTheme.typography.bodyMedium
     )
 }
-
-private fun Float.toFixed(digits: Int): String = "%.${digits}f".format(this) 

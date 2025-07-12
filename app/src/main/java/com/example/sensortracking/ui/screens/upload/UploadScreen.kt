@@ -1,4 +1,4 @@
-package com.example.sensortracking.ui.screens
+package com.example.sensortracking.ui.screens.upload
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
