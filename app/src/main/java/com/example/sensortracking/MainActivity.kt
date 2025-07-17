@@ -99,7 +99,6 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("upload") { 
                             UploadScreen(
-                                navController = navController,
                                 onFloorPlanSelected = { floorPlan ->
                                     selectedFloorPlan = floorPlan
                                     navController.navigate("track")

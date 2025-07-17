@@ -32,7 +32,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import com.example.sensortracking.data.WarehouseMap
 import com.example.sensortracking.sensor.pdr.WarehouseMapProcessor
 import com.example.sensortracking.util.CSVParser
@@ -40,7 +39,6 @@ import com.example.sensortracking.util.CSVParser
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UploadScreen(
-    navController: NavController,
     onFloorPlanSelected: (WarehouseMap) -> Unit = {}
 ) {
     var showFloorPlanDialog by remember { mutableStateOf(false) }
@@ -215,4 +213,4 @@ fun FloorPlanSelectionDialog(
             }
         }
     )
-} 
+}

@@ -2,6 +2,7 @@ package com.example.sensortracking.sensor.log
 
 import com.example.sensortracking.data.PathSegment
 import com.example.sensortracking.data.Position
+import com.example.sensortracking.data.TurnDirection
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -26,7 +27,7 @@ class PathReconstructor {
                     }
                 }
                 is PathSegment.Turn -> {
-                    val turnDirection = if (segment.direction == com.example.sensortracking.data.TurnDirection.RIGHT) 1 else -1
+                    val turnDirection = if (segment.direction == TurnDirection.RIGHT) 1 else -1
                     currentHeading += segment.angle * turnDirection
                     currentHeading = (currentHeading + 360) % 360
                 }

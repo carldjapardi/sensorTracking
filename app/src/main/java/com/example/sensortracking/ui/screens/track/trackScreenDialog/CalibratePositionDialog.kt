@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.sensortracking.ui.screens.track.TrackScreenViewModel
 import com.example.sensortracking.sensor.calibration.CalibrationType
+import com.example.sensortracking.sensor.math.toFixed
 
 @Composable
 fun CalibratePositionDialog(viewModel: TrackScreenViewModel, onDismiss: () -> Unit) {
@@ -82,5 +83,3 @@ fun CalibratePositionDialog(viewModel: TrackScreenViewModel, onDismiss: () -> Un
         dismissButton = { Button(onClick = onDismiss) { Text("Cancel") } }
     )
 }
-
-private fun Float.toFixed(digits: Int): String = "%.${digits}f".format(this) 

@@ -3,6 +3,8 @@ package com.example.sensortracking.sensor.log
 import com.example.sensortracking.data.PathSegment
 import com.example.sensortracking.data.Position
 import com.example.sensortracking.data.TurnDirection
+import com.example.sensortracking.sensor.math.calculateDistance
+import com.example.sensortracking.sensor.math.calculateHeading
 
 class LogAnalyzer(private val headingTolerance: Float = 30f) {
     private val segments = mutableListOf<PathSegment>()
@@ -37,18 +39,6 @@ class LogAnalyzer(private val headingTolerance: Float = 30f) {
         
         addCurrentSegment()
         return segments.toList()
-    }
-    
-    private fun calculateHeading(from: Position, to: Position): Float {
-        val dx = to.x - from.x
-        val dy = to.y - from.y
-        return Math.toDegrees(kotlin.math.atan2(dx.toDouble(), -dy.toDouble())).toFloat().let { if (it < 0) it + 360 else it }
-    }
-    
-    private fun calculateDistance(from: Position, to: Position): Float {
-        val dx = to.x - from.x
-        val dy = to.y - from.y
-        return kotlin.math.sqrt(dx * dx + dy * dy)
     }
     
     private fun isSignificantTurn(newHeading: Float): Boolean {

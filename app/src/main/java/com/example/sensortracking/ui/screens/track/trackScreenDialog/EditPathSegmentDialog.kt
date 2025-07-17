@@ -18,11 +18,7 @@ import com.example.sensortracking.data.PathSegment
 import com.example.sensortracking.data.TurnDirection
 
 @Composable
-fun EditPathSegmentDialog(
-    segment: PathSegment,
-    onConfirm: (PathSegment) -> Unit,
-    onDismiss: () -> Unit
-) {
+fun EditPathSegmentDialog(segment: PathSegment, onConfirm: (PathSegment) -> Unit, onDismiss: () -> Unit) {
     when (segment) {
         is PathSegment.Straight -> EditStraightSegmentDialog(segment, onConfirm, onDismiss)
         is PathSegment.Turn -> EditTurnSegmentDialog(segment, onConfirm, onDismiss)
@@ -30,11 +26,7 @@ fun EditPathSegmentDialog(
 }
 
 @Composable
-private fun EditStraightSegmentDialog(
-    segment: PathSegment.Straight,
-    onConfirm: (PathSegment) -> Unit,
-    onDismiss: () -> Unit
-) {
+private fun EditStraightSegmentDialog(segment: PathSegment.Straight, onConfirm: (PathSegment) -> Unit, onDismiss: () -> Unit) {
     var distance by remember { mutableStateOf(segment.distance.toString()) }
     var headingStart by remember { mutableStateOf(segment.headingRange.start.toString()) }
     var headingEnd by remember { mutableStateOf(segment.headingRange.endInclusive.toString()) }
@@ -45,25 +37,13 @@ private fun EditStraightSegmentDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Distance (meters):")
-                OutlinedTextField(
-                    value = distance,
-                    onValueChange = { distance = it },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                OutlinedTextField(value = distance, onValueChange = { distance = it }, modifier = Modifier.fillMaxWidth())
                 
                 Text("Heading Start (degrees):")
-                OutlinedTextField(
-                    value = headingStart,
-                    onValueChange = { headingStart = it },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                OutlinedTextField(value = headingStart, onValueChange = { headingStart = it }, modifier = Modifier.fillMaxWidth())
                 
                 Text("Heading End (degrees):")
-                OutlinedTextField(
-                    value = headingEnd,
-                    onValueChange = { headingEnd = it },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                OutlinedTextField(value = headingEnd, onValueChange = { headingEnd = it }, modifier = Modifier.fillMaxWidth())
             }
         },
         confirmButton = {
@@ -72,11 +52,7 @@ private fun EditStraightSegmentDialog(
                 val newStart = headingStart.toFloatOrNull() ?: segment.headingRange.start
                 val newEnd = headingEnd.toFloatOrNull() ?: segment.headingRange.endInclusive
                 
-                val newSegment = PathSegment.Straight(
-                    headingRange = newStart..newEnd,
-                    distance = newDistance,
-                    steps = segment.steps
-                )
+                val newSegment = PathSegment.Straight(headingRange = newStart..newEnd, distance = newDistance, steps = segment.steps)
                 onConfirm(newSegment)
             }) { Text("Save") }
         },
@@ -85,11 +61,7 @@ private fun EditStraightSegmentDialog(
 }
 
 @Composable
-private fun EditTurnSegmentDialog(
-    segment: PathSegment.Turn,
-    onConfirm: (PathSegment) -> Unit,
-    onDismiss: () -> Unit
-) {
+private fun EditTurnSegmentDialog(segment: PathSegment.Turn, onConfirm: (PathSegment) -> Unit, onDismiss: () -> Unit) {
     var angle by remember { mutableStateOf(segment.angle.toString()) }
     
     AlertDialog(
@@ -98,11 +70,7 @@ private fun EditTurnSegmentDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Turn Angle (degrees):")
-                OutlinedTextField(
-                    value = angle,
-                    onValueChange = { angle = it },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                OutlinedTextField(value = angle, onValueChange = { angle = it }, modifier = Modifier.fillMaxWidth())
             }
         },
         confirmButton = {
