@@ -2,7 +2,7 @@ package com.example.sensortracking.sensor.pdr
 
 import com.example.sensortracking.data.HeadingData
 import com.example.sensortracking.data.PDRConfig
-import com.example.sensortracking.sensor.math.quaternionToEulerAngles
+import com.example.sensortracking.util.math.quaternionToEulerAngles
 import kotlin.math.abs
 import kotlin.math.sqrt
 

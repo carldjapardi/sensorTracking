@@ -1,4 +1,4 @@
-package com.example.sensortracking.sensor.math
+package com.example.sensortracking.util.math
 import com.example.sensortracking.data.Position
 
 fun calculateHeading(from: Position, to: Position): Float {

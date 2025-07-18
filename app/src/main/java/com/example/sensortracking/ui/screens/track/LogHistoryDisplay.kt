@@ -28,7 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.sensortracking.data.PathSegment
 import com.example.sensortracking.data.TurnDirection
-import com.example.sensortracking.sensor.math.toFixed
+import com.example.sensortracking.util.math.toFixed
 
 @Composable
 fun LogHistoryDisplay(

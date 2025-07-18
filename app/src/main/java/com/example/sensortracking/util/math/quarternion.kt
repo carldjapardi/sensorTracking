@@ -1,4 +1,4 @@
-package com.example.sensortracking.sensor.math
+package com.example.sensortracking.util.math
 
 import kotlin.math.abs
 import kotlin.math.asin

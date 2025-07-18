@@ -3,8 +3,8 @@ package com.example.sensortracking.sensor.log
 import com.example.sensortracking.data.PathSegment
 import com.example.sensortracking.data.Position
 import com.example.sensortracking.data.TurnDirection
-import com.example.sensortracking.sensor.math.calculateDistance
-import com.example.sensortracking.sensor.math.calculateHeading
+import com.example.sensortracking.util.math.calculateDistance
+import com.example.sensortracking.util.math.calculateHeading
 
 class LogAnalyzer(private val headingTolerance: Float = 30f) {
     private val segments = mutableListOf<PathSegment>()

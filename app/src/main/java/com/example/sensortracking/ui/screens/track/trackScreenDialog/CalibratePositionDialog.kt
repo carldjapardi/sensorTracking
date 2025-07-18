@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.sensortracking.ui.screens.track.TrackScreenViewModel
 import com.example.sensortracking.sensor.calibration.CalibrationType
-import com.example.sensortracking.sensor.math.toFixed
+import com.example.sensortracking.util.math.toFixed
 
 @Composable
 fun CalibratePositionDialog(viewModel: TrackScreenViewModel, onDismiss: () -> Unit) {
