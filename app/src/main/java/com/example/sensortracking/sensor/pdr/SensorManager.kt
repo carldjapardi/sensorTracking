@@ -9,7 +9,9 @@ import android.util.Log
 import com.example.sensortracking.data.PDRConfig
 import com.example.sensortracking.data.PDRData
 import com.example.sensortracking.data.Position
+import com.example.sensortracking.data.SensorType
 import com.example.sensortracking.sensor.calibration.CalibrationType
+import com.example.sensortracking.util.SensorDataLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,6 +32,8 @@ class PDRSensorManager(private val context: Context, private val pdrProcessor: P
     
     private val _pdrData = MutableStateFlow(pdrProcessor.getCurrentPDRData())
     val pdrData: StateFlow<PDRData> = _pdrData.asStateFlow()
+    
+    private val sensorDataLogger = SensorDataLogger()
 
     fun initializeSensors(): Boolean {
         val accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
@@ -61,11 +65,25 @@ class PDRSensorManager(private val context: Context, private val pdrProcessor: P
         when (event.sensor.type) {
             Sensor.TYPE_ACCELEROMETER -> {
                 System.arraycopy(event.values, 0, accelerometer, 0, 3)
+                // Log raw accelerometer data
+                sensorDataLogger.logSensorData(
+                    event.timestamp / 1000000, // Convert nanoseconds to milliseconds
+                    SensorType.ACCELEROMETER,
+                    event.values,
+                    event.accuracy
+                )
                 processSensorData()
             }
             Sensor.TYPE_ROTATION_VECTOR -> {
                 System.arraycopy(event.values, 0, rotationVector, 0, 4)
                 pdrProcessor.updateRotationVector(rotationVector)
+                // Log raw rotation vector data
+                sensorDataLogger.logSensorData(
+                    event.timestamp / 1000000, // Convert nanoseconds to milliseconds
+                    SensorType.ROTATION_VECTOR,
+                    event.values,
+                    event.accuracy
+                )
                 processSensorData()
             }
         }
@@ -77,13 +95,35 @@ class PDRSensorManager(private val context: Context, private val pdrProcessor: P
             accelerometer, timestamp
         )
         _pdrData.value = pdrResult
+        
+        // Log processed PDR data
+        sensorDataLogger.logPDRData(
+            com.example.sensortracking.data.PDRDataPoint(
+                timestamp = timestamp,
+                position = pdrResult.position,
+                stepCount = pdrResult.stepCount,
+                totalDistance = pdrResult.totalDistance,
+                currentHeading = pdrResult.currentHeading,
+                lastStep = pdrResult.lastStep,
+                confidence = pdrResult.confidence
+            )
+        )
     }
 
-    fun startTracking(initialPosition: Position) { pdrProcessor.startTracking(initialPosition) }
+    fun startTracking(initialPosition: Position) { 
+        pdrProcessor.startTracking(initialPosition)
+        sensorDataLogger.startLogging()
+    }
 
-    fun resumeTracking() { pdrProcessor.resumeTracking() }
+    fun resumeTracking() { 
+        pdrProcessor.resumeTracking()
+        sensorDataLogger.startLogging()
+    }
 
-    fun stopTracking() { pdrProcessor.stopTracking() }
+    fun stopTracking() { 
+        pdrProcessor.stopTracking()
+        sensorDataLogger.stopLogging()
+    }
 
     fun setInitialPosition(position: Position) { pdrProcessor.setInitialPosition(position) }
 
@@ -94,6 +134,8 @@ class PDRSensorManager(private val context: Context, private val pdrProcessor: P
     fun getPathHistory(): List<Position> { return pdrProcessor.getPathHistory() }
     
     fun updatePathHistory(newPath: List<Position>) { pdrProcessor.updatePathHistory(newPath) }
+    
+    fun getSensorDataLogger(): SensorDataLogger = sensorDataLogger
 
     fun getSensorAvailability(): SensorAvailability {
         return SensorAvailability(

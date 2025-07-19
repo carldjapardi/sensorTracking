@@ -11,13 +11,12 @@ fun NewTrackingConfirmDialog(viewModel: TrackScreenViewModel, onDismiss: () -> U
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Start New Tracking") },
-        text = { Text("Do you want to save the current tracking before starting a new one?") },
+        text = { Text("Do you want to start a new tracking session? The current session will be lost.") },
         confirmButton = {
             Button(onClick = {
                 onDismiss()
-                viewModel.saveTracking()
                 onNewTracking()
-            }) { Text("Save and New Tracking") }
+            }) { Text("Start New Tracking") }
         },
         dismissButton = { Button(onClick = onDismiss) { Text("Cancel") } }
     )

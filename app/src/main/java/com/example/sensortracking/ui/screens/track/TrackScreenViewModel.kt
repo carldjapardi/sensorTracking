@@ -13,6 +13,7 @@ import com.example.sensortracking.sensor.calibration.CalibrationType
 import com.example.sensortracking.sensor.log.LogAnalyzer
 import com.example.sensortracking.sensor.log.PathReconstructor
 import com.example.sensortracking.sensor.pdr.WarehouseMapProcessor
+import com.example.sensortracking.util.SensorDataLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -158,9 +159,23 @@ class TrackScreenViewModel : ViewModel() {
         _uiState.update { it.copy(pdrData = null, isTracking = false) }
     }
     
-    fun saveTracking() {
-        // TODO: Implement save logic (future: show name/desc dialog)
-        // Save current tracking data to storage
+    fun saveTracking(context: Context, sessionName: String): Boolean {
+        val sensorDataLogger = pdrSensorManager?.getSensorDataLogger()
+        if (sensorDataLogger == null) return false
+        
+        val pathHistory = getPathHistory()
+        val pathSegments = getPathSegments()
+        
+        val session = sensorDataLogger.getCurrentSession(
+            sessionName = sessionName,
+            area = _uiState.value.area,
+            warehouseMap = _uiState.value.warehouseMap,
+            pdrConfig = _uiState.value.pdrConfig,
+            pathHistory = pathHistory,
+            pathSegments = pathSegments
+        )
+        
+        return sensorDataLogger.saveToFile(context, sessionName, session)
     }
     
     fun updatePDRConfig(newConfig: PDRConfig) {
