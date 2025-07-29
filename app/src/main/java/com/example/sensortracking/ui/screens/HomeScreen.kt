@@ -9,6 +9,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.foundation.Image
+import android.graphics.BitmapFactory
+import androidx.compose.ui.graphics.asImageBitmap
+import java.io.File
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -94,30 +98,30 @@ fun HomeScreen(
                     TrackingSessionCard(
                         session = session,
                         onDelete = { viewModel.deleteTrackingSession(session.fileName) },
-                        onView = { viewModel.loadSessionJson(context, session.fileName) }
+                        onView = { viewModel.loadSessionCsv(context, session.fileName) }
                     )
                 }
             }
         }
     }
-    
-    if (uiState.showJsonDialog && uiState.selectedSessionJson != null) {
-        JsonDialog(
-            jsonContent = uiState.selectedSessionJson!!,
-            onDismiss = { viewModel.hideJsonDialog() }
+
+    if (uiState.showCsvDialog && uiState.selectedSessionCsv != null) {
+        CsvDialog(
+            csvContent = uiState.selectedSessionCsv!!,
+            onDismiss = { viewModel.hideCsvDialog() }
         )
     }
 }
 
 @Composable
-fun JsonDialog(
-    jsonContent: String,
+fun CsvDialog(
+    csvContent: String,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Session JSON Data")
+            Text("Session CSV Data")
         },
         text = {
             Box(
@@ -126,7 +130,7 @@ fun JsonDialog(
                     .heightIn(max = 400.dp)
             ) {
                 Text(
-                    text = jsonContent,
+                    text = csvContent,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 12.sp,
                     softWrap = false,
@@ -154,7 +158,12 @@ fun TrackingSessionCard(
 ) {
     val context = LocalContext.current
     val sessionManager = remember { TrackingSessionManager(context) }
-    
+    val imageBitmap = remember(session.imageFileName) {
+        val dir = File(context.filesDir, "tracking_sessions")
+        val img = File(dir, session.imageFileName ?: "")
+        if (img.exists()) BitmapFactory.decodeFile(img.absolutePath)?.asImageBitmap() else null
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = onView
@@ -162,6 +171,10 @@ fun TrackingSessionCard(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
+            imageBitmap?.let {
+                Image(bitmap = it, contentDescription = null, modifier = Modifier.fillMaxWidth().height(150.dp))
+                Spacer(Modifier.height(8.dp))
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
