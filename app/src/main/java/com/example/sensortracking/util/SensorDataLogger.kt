@@ -13,6 +13,9 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Bitmap.CompressFormat
+import kotlinx.serialization.json.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.Serializable
 import java.io.FileOutputStream
 
 
@@ -198,6 +201,85 @@ class SensorDataLogger {
         for (i in 0..horizontalBoxes) {
             val x = startX + i * cellSize
             canvas.drawLine(x, startY, x, startY + gridHeight, paint)
+        }
+        for (j in 0..verticalBoxes) {
+            val y = startY + j * cellSize
+            canvas.drawLine(startX, y, startX + gridWidth, y, paint)
+        }
+        paint.color = Color.BLUE
+        paint.strokeWidth = 3f
+        for (i in 1 until pathHistory.size) {
+            val prev = pathHistory[i-1]
+            val curr = pathHistory[i]
+            val prevX = startX + (prev.x / maxX) * gridWidth
+            val prevY = startY + (prev.y / maxY) * gridHeight
+            val currX = startX + (curr.x / maxX) * gridWidth
+            val currY = startY + (curr.y / maxY) * gridHeight
+            canvas.drawLine(prevX, prevY, currX, currY, paint)
+        }
+        return bitmap
+    }
+    
+    private fun formatJsonCompact(jsonString: String): String {
+        val result = StringBuilder()
+        var indentLevel = 0
+        val indentSize = 2
+        
+        var i = 0
+        while (i < jsonString.length) {
+            val char = jsonString[i]
+            
+            when (char) {
+                '{' -> {
+                    result.append(" ".repeat(indentLevel * indentSize))
+                    result.append(char)
+                    result.append("\n")
+                    indentLevel++
+                }
+                '}' -> {
+                    indentLevel--
+                    result.append(" ".repeat(indentLevel * indentSize))
+                    result.append(char)
+                }
+                '[' -> {
+                    result.append(" ".repeat(indentLevel * indentSize))
+                    result.append(char)
+                    var bracketCount = 1
+                    var arrayContent = StringBuilder()
+                    i++
+                    
+                    while (i < jsonString.length && bracketCount > 0) {
+                        val nextChar = jsonString[i]
+                        when (nextChar) {
+                            '[' -> bracketCount++
+                            ']' -> bracketCount--
+                        }
+                        if (bracketCount > 0) {
+                            arrayContent.append(nextChar)
+                        }
+                        i++
+                    }
+                    result.append(arrayContent.toString())
+                    result.append("]")
+                    i--
+                }
+                ',' -> {
+                    result.append(char)
+                    if (i + 1 < jsonString.length && jsonString[i + 1] != '{' && jsonString[i + 1] != '[') {
+                        result.append("\n")
+                    }
+                }
+                ':' -> {
+                    result.append(char)
+                    result.append(" ")
+                }
+                else -> {
+                    if (!char.isWhitespace()) {
+                        result.append(char)
+                    }
+                }
+            }
+            i++
         }
         for (j in 0..verticalBoxes) {
             val y = startY + j * cellSize
