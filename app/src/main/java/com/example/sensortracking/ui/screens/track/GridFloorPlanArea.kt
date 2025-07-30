@@ -24,6 +24,7 @@ fun GridFloorPlanArea(
     zoom: Float,
     onZoomChange: (Float) -> Unit,
     userPosition: Position,
+    heading: Float = 0f,
     area: Area,
     pathHistory: List<Position> = emptyList(),
     warehouseMap: WarehouseMap? = null
@@ -113,7 +114,12 @@ fun GridFloorPlanArea(
             val posX = startX + offsetX + (userPosition.x / maxX) * gridWidth
             val posY = startY + offsetY + (userPosition.y / maxY) * gridHeight
 
-            drawCircle(color = Color.Red, radius = 8f, center = Offset(posX, posY))
+            drawTriangleArrow(
+                center = Offset(posX, posY),
+                heading = heading,
+                size = 20f,
+                color = Color.Red
+            )
         }
     }
 }
@@ -152,4 +158,42 @@ private fun DrawScope.drawWarehouseMap(
             )
         }
     }
+}
+
+private fun DrawScope.drawTriangleArrow(
+    center: Offset,
+    heading: Float,
+    size: Float,
+    color: Color
+) {
+    val angleRad = Math.toRadians(heading.toDouble())
+    val cos = kotlin.math.cos(angleRad).toFloat()
+    val sin = kotlin.math.sin(angleRad).toFloat()
+    
+    val arrowLength = size
+    val arrowWidth = size * 0.6f
+    
+    val tip = Offset(
+        center.x + sin * arrowLength,
+        center.y - cos * arrowLength
+    )
+    
+    val leftBase = Offset(
+        center.x + sin * (-arrowLength * 0.3f) - cos * arrowWidth,
+        center.y - cos * (-arrowLength * 0.3f) - sin * arrowWidth
+    )
+    
+    val rightBase = Offset(
+        center.x + sin * (-arrowLength * 0.3f) + cos * arrowWidth,
+        center.y - cos * (-arrowLength * 0.3f) + sin * arrowWidth
+    )
+    
+    val path = androidx.compose.ui.graphics.Path().apply {
+        moveTo(tip.x, tip.y)
+        lineTo(leftBase.x, leftBase.y)
+        lineTo(rightBase.x, rightBase.y)
+        close()
+    }
+    
+    drawPath(path, color)
 }

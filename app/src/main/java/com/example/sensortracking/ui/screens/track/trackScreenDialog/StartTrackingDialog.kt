@@ -15,7 +15,6 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun StartTrackingDialog(
     onSelectFloorPlan: () -> Unit,
-    onUploadFloorPlan: () -> Unit,
     onNoFloorPlan: () -> Unit,
     onDismiss: () -> Unit,
     hasSelectedFloorPlan: Boolean = false
@@ -41,9 +40,9 @@ fun StartTrackingDialog(
                     Text(if (hasSelectedFloorPlan) "Change Floor Plan" else "Select Floor Plan") 
                 }
                 Spacer(Modifier.height(8.dp))
-                Button(onClick = { onDismiss(); onUploadFloorPlan() }) { Text("Upload New Floor Plan") }
-                Spacer(Modifier.height(8.dp))
-                Button(onClick = { onDismiss(); onNoFloorPlan() }) { Text("No Floor Plan") }
+                Button(onClick = { onDismiss(); onNoFloorPlan() }) {
+                    Text("No Floor Plan")
+                }
             }
         },
         confirmButton = {},

@@ -103,7 +103,6 @@ fun TrackScreen(
     if (showStartDialog) {
         StartTrackingDialog(
             onSelectFloorPlan = { navController?.navigate("upload") },
-            onUploadFloorPlan = { /* TODO: Upload new floor plan */ },
             onNoFloorPlan = {
                 viewModel.clearWarehouseMap()
                 showStartDialog = false
@@ -211,6 +210,7 @@ fun TrackScreen(
                         viewModel.onZoomChange(clamped)
                     },
                     userPosition = uiState.currentPosition,
+                    heading = uiState.currentHeading,
                     area = uiState.area,
                     pathHistory = viewModel.getPathHistory(),
                     warehouseMap = uiState.warehouseMap
