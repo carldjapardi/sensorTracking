@@ -6,13 +6,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.sensortracking.ui.screens.track.TrackScreenViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SaveTrackingDialog(viewModel: TrackScreenViewModel, onDismiss: () -> Unit) {
+fun SaveTrackingDialog(
+    viewModel: TrackScreenViewModel,
+    navController: NavController?,
+    onDismiss: () -> Unit
+) {
     val context = LocalContext.current
     var sessionName by remember { 
         mutableStateOf(
@@ -20,7 +25,6 @@ fun SaveTrackingDialog(viewModel: TrackScreenViewModel, onDismiss: () -> Unit) {
         ) 
     }
     var isSaving by remember { mutableStateOf(false) }
-    var saveResult by remember { mutableStateOf<Boolean?>(null) }
     
     AlertDialog(
         onDismissRequest = { if (!isSaving) onDismiss() },
@@ -39,17 +43,6 @@ fun SaveTrackingDialog(viewModel: TrackScreenViewModel, onDismiss: () -> Unit) {
                     enabled = !isSaving
                 )
                 
-                if (saveResult != null) {
-                    Text(
-                        text = if (saveResult == true) {
-                            "Session saved successfully!"
-                        } else {
-                            "Failed to save session. Please try again."
-                        },
-                        color = if (saveResult == true) MaterialTheme.colorScheme.primary 
-                               else MaterialTheme.colorScheme.error
-                    )
-                }
             }
         },
         confirmButton = {
@@ -57,8 +50,12 @@ fun SaveTrackingDialog(viewModel: TrackScreenViewModel, onDismiss: () -> Unit) {
                 onClick = {
                     if (sessionName.isNotBlank() && !isSaving) {
                         isSaving = true
-                        saveResult = viewModel.saveTracking(context, sessionName)
+                        val success = viewModel.saveTracking(context, sessionName)
                         isSaving = false
+                        if (success) {
+                            onDismiss()
+                            navController?.navigate("home")
+                        }
                     }
                 },
                 enabled = sessionName.isNotBlank() && !isSaving

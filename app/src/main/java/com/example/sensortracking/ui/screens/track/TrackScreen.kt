@@ -165,6 +165,7 @@ fun TrackScreen(
     if (showSaveTrackingDialog) {
         SaveTrackingDialog(
             viewModel = viewModel,
+            navController = navController,
             onDismiss = { showSaveTrackingDialog = false })
     }
     

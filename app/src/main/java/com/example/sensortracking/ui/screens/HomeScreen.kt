@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.foundation.Image
 import android.graphics.BitmapFactory
 import androidx.compose.ui.graphics.asImageBitmap
@@ -98,6 +99,7 @@ fun HomeScreen(
                     TrackingSessionCard(
                         session = session,
                         onDelete = { viewModel.deleteTrackingSession(session.fileName) },
+                        onShare = { viewModel.shareSessionCsv(context, session.fileName) },
                         onView = { viewModel.loadSessionCsv(context, session.fileName) }
                     )
                 }
@@ -154,6 +156,7 @@ fun CsvDialog(
 fun TrackingSessionCard(
     session: TrackingSessionInfo,
     onDelete: () -> Unit,
+    onShare: () -> Unit,
     onView: () -> Unit
 ) {
     val context = LocalContext.current
@@ -196,12 +199,20 @@ fun TrackingSessionCard(
                     )
                 }
                 
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Delete session",
-                        tint = MaterialTheme.colorScheme.error
-                    )
+                Row {
+                    IconButton(onClick = onShare) {
+                        Icon(
+                            Icons.Default.Share,
+                            contentDescription = "Share CSV"
+                        )
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Delete session",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
             

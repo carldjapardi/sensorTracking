@@ -18,99 +18,6 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.Serializable
 import java.io.FileOutputStream
 
-@Serializable
-data class TrackingSessionJson(
-    val metadata: SessionMetadataJson,
-    val rawSensorData: RawSensorDataJson,
-    val pdrData: PDRDataSeriesJson,
-    val pathHistory: List<PositionJson>,
-    val pathSegments: List<PathSegmentJson>
-)
-
-@Serializable
-data class SessionMetadataJson(
-    val sessionName: String,
-    val startTime: Long,
-    val endTime: Long,
-    val duration: Long,
-    val area: AreaJson,
-    val warehouseMap: WarehouseMapJson?,
-    val pdrConfig: PDRConfigJson
-)
-
-@Serializable
-data class RawSensorDataJson(
-    val timestamps: List<Long>,
-    val accelerometerData: List<Float>,
-    val rotationVectorData: List<Float>,
-    val accelerometerAccuracy: List<Int>,
-    val rotationVectorAccuracy: List<Int>
-)
-
-@Serializable
-data class PDRDataSeriesJson(
-    val timestamps: List<Long>,
-    val positions: List<Float>,
-    val stepCounts: List<Int>,
-    val totalDistances: List<Float>,
-    val headings: List<Float>,
-    val headingConfidences: List<Float>,
-    val overallConfidences: List<Float>,
-    val stepData: StepDataSeriesJson?
-)
-
-@Serializable
-data class StepDataSeriesJson(
-    val stepTimestamps: List<Long>,
-    val stepMagnitudes: List<Float>,
-    val stepConfidences: List<Float>
-)
-
-@Serializable
-data class PositionJson(val x: Float, val y: Float)
-
-@Serializable
-data class HeadingDataJson(val heading: Float, val confidence: Float)
-
-@Serializable
-data class StepDataJson(val timestamp: Long, val magnitude: Float, val confidence: Float)
-
-@Serializable
-data class AreaJson(val length: Float, val width: Float)
-
-@Serializable
-data class PDRConfigJson(
-    val stepThreshold: Float,
-    val stepCooldownMs: Long,
-    val defaultStrideLength: Float,
-    val headingTolerance: Float
-)
-
-@Serializable
-data class WarehouseMapJson(
-    val width: Int,
-    val height: Int,
-    val startPosition: PositionJson?,
-    val endPosition: PositionJson?
-)
-
-@Serializable
-sealed class PathSegmentJson {
-    @Serializable
-    data class Straight(
-        val headingRangeStart: Float,
-        val headingRangeEnd: Float,
-        val distance: Float,
-        val steps: Int
-    ) : PathSegmentJson()
-    
-    @Serializable
-    data class Turn(
-        val direction: String,
-        val angle: Float,
-        val steps: Int
-    ) : PathSegmentJson()
-}
 
 class SensorDataLogger {
     private val timestamps = mutableListOf<Long>()
@@ -374,9 +281,24 @@ class SensorDataLogger {
             }
             i++
         }
-        
-        return result.toString()
+        for (j in 0..verticalBoxes) {
+            val y = startY + j * cellSize
+            canvas.drawLine(startX, y, startX + gridWidth, y, paint)
+        }
+        paint.color = Color.BLUE
+        paint.strokeWidth = 3f
+        for (i in 1 until pathHistory.size) {
+            val prev = pathHistory[i-1]
+            val curr = pathHistory[i]
+            val prevX = startX + (prev.x / maxX) * gridWidth
+            val prevY = startY + (prev.y / maxY) * gridHeight
+            val currX = startX + (curr.x / maxX) * gridWidth
+            val currY = startY + (curr.y / maxY) * gridHeight
+            canvas.drawLine(prevX, prevY, currX, currY, paint)
+        }
+        return bitmap
     }
+    
     
     fun getCurrentSession(
         sessionName: String,

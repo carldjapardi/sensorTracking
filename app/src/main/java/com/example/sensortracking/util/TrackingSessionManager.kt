@@ -85,12 +85,20 @@ class TrackingSessionManager(private val context: Context) {
         return try {
             val trackingDir = File(context.filesDir, "tracking_sessions")
             val file = File(trackingDir, fileName)
-            
+            val image = File(trackingDir, file.nameWithoutExtension + ".png")
+
+            var success = true
             if (file.exists()) {
-                file.delete()
+                success = success && file.delete()
             } else {
-                false
+                success = false
             }
+
+            if (image.exists()) {
+                image.delete()
+            }
+
+            success
         } catch (e: Exception) {
             e.printStackTrace()
             false

@@ -1,6 +1,8 @@
 package com.example.sensortracking.ui.screens
 
 import android.content.Context
+import android.content.Intent
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sensortracking.util.TrackingSessionManager
@@ -98,6 +100,36 @@ class HomeScreenViewModel : ViewModel() {
             showCsvDialog = false,
             selectedSessionCsv = null
         )
+    }
+
+    fun shareSessionCsv(context: Context, fileName: String) {
+        viewModelScope.launch {
+            try {
+                val trackingDir = File(context.filesDir, "tracking_sessions")
+                val file = File(trackingDir, fileName)
+                if (file.exists()) {
+                    val uri = FileProvider.getUriForFile(
+                        context,
+                        context.packageName + ".fileprovider",
+                        file
+                    )
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/csv"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(Intent.createChooser(intent, "Share CSV"))
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = "Session file not found"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Error sharing session: ${e.message}"
+                )
+            }
+        }
     }
     
     fun clearError() {
