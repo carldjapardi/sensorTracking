@@ -15,7 +15,7 @@ fun SettingsScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Intellinum") },
+                title = { Text("Settings") },
                 actions = {
                     IconButton(onClick = { /* TODO: More options */ }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "More options")

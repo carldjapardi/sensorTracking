@@ -10,10 +10,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.drawscope.rotate
 import com.example.sensortracking.data.CellType
 import com.example.sensortracking.data.Position
 import com.example.sensortracking.data.WarehouseMap
@@ -24,6 +26,7 @@ fun GridFloorPlanArea(
     zoom: Float,
     onZoomChange: (Float) -> Unit,
     userPosition: Position,
+    heading: Float,
     area: Area,
     pathHistory: List<Position> = emptyList(),
     warehouseMap: WarehouseMap? = null
@@ -65,8 +68,16 @@ fun GridFloorPlanArea(
             val centerX = size.width / 2f
             val centerY = size.height / 2f
 
-            val offsetX = centerX - (startX + userX)
-            val offsetY = centerY - (startY + userY)
+            var offsetX = centerX - (startX + userX)
+            var offsetY = centerY - (startY + userY)
+
+            val minOffsetX = size.width - (startX + gridWidth)
+            val maxOffsetX = -startX
+            val minOffsetY = size.height - (startY + gridHeight)
+            val maxOffsetY = -startY
+
+            offsetX = offsetX.coerceIn(minOffsetX, maxOffsetX)
+            offsetY = offsetY.coerceIn(minOffsetY, maxOffsetY)
 
             if (warehouseMap != null) {
                 drawWarehouseMap(warehouseMap, startX + offsetX, startY + offsetY, cellSize)
@@ -113,7 +124,17 @@ fun GridFloorPlanArea(
             val posX = startX + offsetX + (userPosition.x / maxX) * gridWidth
             val posY = startY + offsetY + (userPosition.y / maxY) * gridHeight
 
-            drawCircle(color = Color.Red, radius = 8f, center = Offset(posX, posY))
+            val arrowSize = 12f
+            val path = Path().apply {
+                moveTo(posX, posY - arrowSize)
+                lineTo(posX - arrowSize, posY + arrowSize)
+                lineTo(posX + arrowSize, posY + arrowSize)
+                close()
+            }
+
+            rotate(degrees = heading, pivot = Offset(posX, posY)) {
+                drawPath(path = path, color = Color.Red)
+            }
         }
     }
 }

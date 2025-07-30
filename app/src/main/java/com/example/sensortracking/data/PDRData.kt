@@ -1,5 +1,8 @@
 package com.example.sensortracking.data
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Position(
     val x: Float,
     val y: Float

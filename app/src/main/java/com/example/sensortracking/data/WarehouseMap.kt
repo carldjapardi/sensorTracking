@@ -1,5 +1,8 @@
 package com.example.sensortracking.data
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class WarehouseCell(
     val x: Int,
     val y: Int,
@@ -7,6 +10,7 @@ data class WarehouseCell(
     val storageLocation: String? = null
 )
 
+@Serializable
 enum class CellType {
     STORAGE,      // Non-walkable Storage location (B02, C80, etc.)
     AISLE,        // Walkable aisle space
@@ -15,6 +19,7 @@ enum class CellType {
     END           // Ending point
 }
 
+@Serializable
 data class WarehouseMap(
     val width: Int,
     val height: Int,

@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.LaunchedEffect
 import androidx.documentfile.provider.DocumentFile
 import com.example.sensortracking.util.CSVParser
 import androidx.compose.ui.Alignment
@@ -50,6 +52,7 @@ fun UploadScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    LaunchedEffect(Unit) { viewModel.initialize(context) }
     var showFloorPlanDialog by remember { mutableStateOf(false) }
     var selectedFloorPlan by remember { mutableStateOf<WarehouseMap?>(null) }
     var showCustomDialog by remember { mutableStateOf(false) }
@@ -109,7 +112,8 @@ fun UploadScreen(
                 FloorPlanCard(
                     title = plan.title,
                     description = "${plan.rows} rows, ${plan.columns} columns, ${plan.sizeBytes} bytes",
-                    onSelect = { onFloorPlanSelected(plan.map) }
+                    onSelect = { onFloorPlanSelected(plan.map) },
+                    onDelete = { viewModel.deleteCustomFloorPlan(plan) }
                 )
             }
 
@@ -179,7 +183,13 @@ fun UploadScreen(
 }
 
 @Composable
-fun FloorPlanCard(title: String, description: String, onSelect: () -> Unit, enabled: Boolean = true) {
+fun FloorPlanCard(
+    title: String,
+    description: String,
+    onSelect: () -> Unit,
+    onDelete: (() -> Unit)? = null,
+    enabled: Boolean = true
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = { if (enabled) onSelect() },
@@ -205,12 +215,21 @@ fun FloorPlanCard(title: String, description: String, onSelect: () -> Unit, enab
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = "Select",
-                    tint = if (enabled) MaterialTheme.colorScheme.primary 
-                           else MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (onDelete != null) {
+                    IconButton(onClick = onDelete, enabled = enabled) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete",
+                            tint = if (enabled) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = "Select",
+                        tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }

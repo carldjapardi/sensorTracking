@@ -103,7 +103,7 @@ fun TrackScreen(
     if (showStartDialog) {
         StartTrackingDialog(
             onSelectFloorPlan = { navController?.navigate("upload") },
-            onUploadFloorPlan = { /* TODO: Upload new floor plan */ },
+            onUploadFloorPlan = { navController?.navigate("upload") },
             onNoFloorPlan = {
                 viewModel.clearWarehouseMap()
                 showStartDialog = false
@@ -191,7 +191,7 @@ fun TrackScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Intellinum") },
+                title = { Text("Track") },
                 actions = {
                     IconButton(onClick = { /* TODO: More options */ }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "More options")
@@ -211,6 +211,7 @@ fun TrackScreen(
                         viewModel.onZoomChange(clamped)
                     },
                     userPosition = uiState.currentPosition,
+                    heading = uiState.currentHeading,
                     area = uiState.area,
                     pathHistory = viewModel.getPathHistory(),
                     warehouseMap = uiState.warehouseMap
