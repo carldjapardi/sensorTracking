@@ -1,6 +1,8 @@
 package com.example.sensortracking.ui.screens
 
 import android.content.Context
+import android.content.Intent
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sensortracking.util.TrackingSessionManager
@@ -15,8 +17,8 @@ data class HomeScreenUiState(
     val trackingSessions: List<TrackingSessionInfo> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val selectedSessionJson: String? = null,
-    val showJsonDialog: Boolean = false
+    val selectedSessionCsv: String? = null,
+    val showCsvDialog: Boolean = false
 )
 
 class HomeScreenViewModel : ViewModel() {
@@ -68,17 +70,17 @@ class HomeScreenViewModel : ViewModel() {
         }
     }
     
-    fun loadSessionJson(context: Context, fileName: String) {
+    fun loadSessionCsv(context: Context, fileName: String) {
         viewModelScope.launch {
             try {
                 val trackingDir = File(context.filesDir, "tracking_sessions")
                 val file = File(trackingDir, fileName)
                 
                 if (file.exists()) {
-                    val jsonContent = file.readText()
+                    val csvContent = file.readText()
                     _uiState.value = _uiState.value.copy(
-                        selectedSessionJson = jsonContent,
-                        showJsonDialog = true
+                        selectedSessionCsv = csvContent,
+                        showCsvDialog = true
                     )
                 } else {
                     _uiState.value = _uiState.value.copy(
@@ -87,17 +89,47 @@ class HomeScreenViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
-                    errorMessage = "Error loading session JSON: ${e.message}"
+                    errorMessage = "Error loading session CSV: ${e.message}"
                 )
             }
         }
     }
     
-    fun hideJsonDialog() {
+    fun hideCsvDialog() {
         _uiState.value = _uiState.value.copy(
-            showJsonDialog = false,
-            selectedSessionJson = null
+            showCsvDialog = false,
+            selectedSessionCsv = null
         )
+    }
+
+    fun shareSessionCsv(context: Context, fileName: String) {
+        viewModelScope.launch {
+            try {
+                val trackingDir = File(context.filesDir, "tracking_sessions")
+                val file = File(trackingDir, fileName)
+                if (file.exists()) {
+                    val uri = FileProvider.getUriForFile(
+                        context,
+                        context.packageName + ".fileprovider",
+                        file
+                    )
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/csv"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(Intent.createChooser(intent, "Share CSV"))
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = "Session file not found"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Error sharing session: ${e.message}"
+                )
+            }
+        }
     }
     
     fun clearError() {

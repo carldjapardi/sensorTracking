@@ -1,9 +1,6 @@
 package com.example.sensortracking.util
 
 import android.content.Context
-import com.example.sensortracking.data.TrackingSession
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.decodeFromString
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -16,7 +13,8 @@ data class TrackingSessionInfo(
     val duration: Long,
     val stepCount: Int,
     val totalDistance: Float,
-    val fileSize: Long
+    val fileSize: Long,
+    val imageFileName: String?
 )
 
 class TrackingSessionManager(private val context: Context) {
@@ -28,21 +26,49 @@ class TrackingSessionManager(private val context: Context) {
         }
         
         return trackingDir.listFiles()
-            ?.filter { it.extension == "json" }
+            ?.filter { it.extension == "csv" }
             ?.mapNotNull { file ->
                 try {
-                    val json = Json { ignoreUnknownKeys = true }
-                    val sessionJson = json.decodeFromString<TrackingSessionJson>(file.readText())
-                    
+                    val lines = file.readLines()
+                    val meta = mutableMapOf<String, String>()
+                    var idx = 0
+                    while (idx < lines.size && lines[idx].isNotBlank()) {
+                        val parts = lines[idx].split(",", limit = 2)
+                        if (parts.size == 2) meta[parts[0]] = parts[1]
+                        idx++
+                    }
+
+                    val sessionName = meta["sessionName"] ?: file.nameWithoutExtension
+                    val startTime = meta["startTime"]?.toLong() ?: 0L
+                    val endTime = meta["endTime"]?.toLong() ?: 0L
+                    val duration = meta["duration"]?.toLong() ?: 0L
+
+                    val pdrHeader = "timestamp,pos_x,pos_y,step_count,total_distance,heading,heading_confidence,overall_confidence"
+                    val pdrIndex = lines.indexOf(pdrHeader)
+                    var stepCount = 0
+                    var totalDistance = 0f
+                    if (pdrIndex != -1) {
+                        for (i in pdrIndex + 1 until lines.size) {
+                            val l = lines[i]
+                            if (l.isBlank()) break
+                            val parts = l.split(',')
+                            if (parts.size >= 8) {
+                                stepCount = parts[3].toIntOrNull() ?: stepCount
+                                totalDistance = parts[4].toFloatOrNull() ?: totalDistance
+                            }
+                        }
+                    }
+
                     TrackingSessionInfo(
                         fileName = file.name,
-                        sessionName = sessionJson.metadata.sessionName,
-                        startTime = sessionJson.metadata.startTime,
-                        endTime = sessionJson.metadata.endTime,
-                        duration = sessionJson.metadata.duration,
-                        stepCount = sessionJson.pdrData.stepCounts.lastOrNull() ?: 0,
-                        totalDistance = sessionJson.pdrData.totalDistances.lastOrNull() ?: 0f,
-                        fileSize = file.length()
+                        sessionName = sessionName,
+                        startTime = startTime,
+                        endTime = endTime,
+                        duration = duration,
+                        stepCount = stepCount,
+                        totalDistance = totalDistance,
+                        fileSize = file.length(),
+                        imageFileName = file.nameWithoutExtension + ".png"
                     )
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -53,105 +79,25 @@ class TrackingSessionManager(private val context: Context) {
             ?: emptyList()
     }
     
-    fun loadTrackingSession(fileName: String): TrackingSession? {
-        return try {
-            val trackingDir = File(context.filesDir, "tracking_sessions")
-            val file = File(trackingDir, fileName)
-            
-            if (!file.exists()) {
-                return null
-            }
-            
-            val json = Json { ignoreUnknownKeys = true }
-            val sessionJson = json.decodeFromString<TrackingSessionJson>(file.readText())
-            
-            val metadata = com.example.sensortracking.data.SessionMetadata(
-                sessionName = sessionJson.metadata.sessionName,
-                startTime = sessionJson.metadata.startTime,
-                endTime = sessionJson.metadata.endTime,
-                duration = sessionJson.metadata.duration,
-                area = com.example.sensortracking.ui.screens.track.Area(
-                    length = sessionJson.metadata.area.length,
-                    width = sessionJson.metadata.area.width
-                ),
-                warehouseMap = null,
-                pdrConfig = com.example.sensortracking.data.PDRConfig(
-                    stepThreshold = sessionJson.metadata.pdrConfig.stepThreshold,
-                    stepCooldownMs = sessionJson.metadata.pdrConfig.stepCooldownMs,
-                    defaultStrideLength = sessionJson.metadata.pdrConfig.defaultStrideLength,
-                    headingTolerance = sessionJson.metadata.pdrConfig.headingTolerance
-                )
-            )
-            
-            val rawSensorData = com.example.sensortracking.data.RawSensorData(
-                timestamps = sessionJson.rawSensorData.timestamps.toLongArray(),
-                accelerometerData = sessionJson.rawSensorData.accelerometerData.toFloatArray(),
-                rotationVectorData = sessionJson.rawSensorData.rotationVectorData.toFloatArray(),
-                accelerometerAccuracy = sessionJson.rawSensorData.accelerometerAccuracy.toIntArray(),
-                rotationVectorAccuracy = sessionJson.rawSensorData.rotationVectorAccuracy.toIntArray()
-            )
-            
-            val stepDataSeries = sessionJson.pdrData.stepData?.let { stepDataJson ->
-                com.example.sensortracking.data.StepDataSeries(
-                    stepTimestamps = stepDataJson.stepTimestamps.toLongArray(),
-                    stepMagnitudes = stepDataJson.stepMagnitudes.toFloatArray(),
-                    stepConfidences = stepDataJson.stepConfidences.toFloatArray()
-                )
-            }
-            
-            val pdrDataSeries = com.example.sensortracking.data.PDRDataSeries(
-                timestamps = sessionJson.pdrData.timestamps.toLongArray(),
-                positions = sessionJson.pdrData.positions.toFloatArray(),
-                stepCounts = sessionJson.pdrData.stepCounts.toIntArray(),
-                totalDistances = sessionJson.pdrData.totalDistances.toFloatArray(),
-                headings = sessionJson.pdrData.headings.toFloatArray(),
-                headingConfidences = sessionJson.pdrData.headingConfidences.toFloatArray(),
-                overallConfidences = sessionJson.pdrData.overallConfidences.toFloatArray(),
-                stepData = stepDataSeries
-            )
-            
-            val pathHistory = sessionJson.pathHistory.map { positionJson ->
-                com.example.sensortracking.data.Position(positionJson.x, positionJson.y)
-            }
-            
-            val pathSegments = sessionJson.pathSegments.map { segmentJson ->
-                when (segmentJson) {
-                    is PathSegmentJson.Straight -> com.example.sensortracking.data.PathSegment.Straight(
-                        headingRange = segmentJson.headingRangeStart..segmentJson.headingRangeEnd,
-                        distance = segmentJson.distance,
-                        steps = segmentJson.steps
-                    )
-                    is PathSegmentJson.Turn -> com.example.sensortracking.data.PathSegment.Turn(
-                        direction = com.example.sensortracking.data.TurnDirection.valueOf(segmentJson.direction),
-                        angle = segmentJson.angle,
-                        steps = segmentJson.steps
-                    )
-                }
-            }
-            
-            TrackingSession(
-                metadata = metadata,
-                rawSensorData = rawSensorData,
-                pdrData = pdrDataSeries,
-                pathHistory = pathHistory,
-                pathSegments = pathSegments
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
     
     fun deleteTrackingSession(fileName: String): Boolean {
         return try {
             val trackingDir = File(context.filesDir, "tracking_sessions")
             val file = File(trackingDir, fileName)
-            
+            val image = File(trackingDir, file.nameWithoutExtension + ".png")
+
+            var success = true
             if (file.exists()) {
-                file.delete()
+                success = success && file.delete()
             } else {
-                false
+                success = false
             }
+
+            if (image.exists()) {
+                image.delete()
+            }
+
+            success
         } catch (e: Exception) {
             e.printStackTrace()
             false

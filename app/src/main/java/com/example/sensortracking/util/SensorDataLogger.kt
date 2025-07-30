@@ -8,103 +8,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 import java.io.FileWriter
-import kotlinx.serialization.json.*
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.Serializable
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Bitmap.CompressFormat
+import java.io.FileOutputStream
 
-@Serializable
-data class TrackingSessionJson(
-    val metadata: SessionMetadataJson,
-    val rawSensorData: RawSensorDataJson,
-    val pdrData: PDRDataSeriesJson,
-    val pathHistory: List<PositionJson>,
-    val pathSegments: List<PathSegmentJson>
-)
-
-@Serializable
-data class SessionMetadataJson(
-    val sessionName: String,
-    val startTime: Long,
-    val endTime: Long,
-    val duration: Long,
-    val area: AreaJson,
-    val warehouseMap: WarehouseMapJson?,
-    val pdrConfig: PDRConfigJson
-)
-
-@Serializable
-data class RawSensorDataJson(
-    val timestamps: List<Long>,
-    val accelerometerData: List<Float>,
-    val rotationVectorData: List<Float>,
-    val accelerometerAccuracy: List<Int>,
-    val rotationVectorAccuracy: List<Int>
-)
-
-@Serializable
-data class PDRDataSeriesJson(
-    val timestamps: List<Long>,
-    val positions: List<Float>,
-    val stepCounts: List<Int>,
-    val totalDistances: List<Float>,
-    val headings: List<Float>,
-    val headingConfidences: List<Float>,
-    val overallConfidences: List<Float>,
-    val stepData: StepDataSeriesJson?
-)
-
-@Serializable
-data class StepDataSeriesJson(
-    val stepTimestamps: List<Long>,
-    val stepMagnitudes: List<Float>,
-    val stepConfidences: List<Float>
-)
-
-@Serializable
-data class PositionJson(val x: Float, val y: Float)
-
-@Serializable
-data class HeadingDataJson(val heading: Float, val confidence: Float)
-
-@Serializable
-data class StepDataJson(val timestamp: Long, val magnitude: Float, val confidence: Float)
-
-@Serializable
-data class AreaJson(val length: Float, val width: Float)
-
-@Serializable
-data class PDRConfigJson(
-    val stepThreshold: Float,
-    val stepCooldownMs: Long,
-    val defaultStrideLength: Float,
-    val headingTolerance: Float
-)
-
-@Serializable
-data class WarehouseMapJson(
-    val width: Int,
-    val height: Int,
-    val startPosition: PositionJson?,
-    val endPosition: PositionJson?
-)
-
-@Serializable
-sealed class PathSegmentJson {
-    @Serializable
-    data class Straight(
-        val headingRangeStart: Float,
-        val headingRangeEnd: Float,
-        val distance: Float,
-        val steps: Int
-    ) : PathSegmentJson()
-    
-    @Serializable
-    data class Turn(
-        val direction: String,
-        val angle: Float,
-        val steps: Int
-    ) : PathSegmentJson()
-}
 
 class SensorDataLogger {
     private val timestamps = mutableListOf<Long>()
@@ -202,159 +112,111 @@ class SensorDataLogger {
     
     fun saveToFile(context: Context, sessionName: String, session: TrackingSession): Boolean {
         return try {
-            val json = Json { 
-                ignoreUnknownKeys = true
-            }
-            
-            val trackingSessionJson = TrackingSessionJson(
-                metadata = SessionMetadataJson(
-                    sessionName = session.metadata.sessionName,
-                    startTime = session.metadata.startTime,
-                    endTime = session.metadata.endTime,
-                    duration = session.metadata.duration,
-                    area = AreaJson(session.metadata.area.length, session.metadata.area.width),
-                    warehouseMap = session.metadata.warehouseMap?.let { map ->
-                        WarehouseMapJson(
-                            width = map.width,
-                            height = map.height,
-                            startPosition = map.startPosition?.let { PositionJson(it.x, it.y) },
-                            endPosition = map.endPosition?.let { PositionJson(it.x, it.y) }
-                        )
-                    },
-                    pdrConfig = PDRConfigJson(
-                        stepThreshold = session.metadata.pdrConfig.stepThreshold,
-                        stepCooldownMs = session.metadata.pdrConfig.stepCooldownMs,
-                        defaultStrideLength = session.metadata.pdrConfig.defaultStrideLength,
-                        headingTolerance = session.metadata.pdrConfig.headingTolerance
-                    )
-                ),
-                rawSensorData = RawSensorDataJson(
-                    timestamps = session.rawSensorData.timestamps.toList(),
-                    accelerometerData = session.rawSensorData.accelerometerData.toList(),
-                    rotationVectorData = session.rawSensorData.rotationVectorData.toList(),
-                    accelerometerAccuracy = session.rawSensorData.accelerometerAccuracy.toList(),
-                    rotationVectorAccuracy = session.rawSensorData.rotationVectorAccuracy.toList()
-                ),
-                pdrData = PDRDataSeriesJson(
-                    timestamps = session.pdrData.timestamps.toList(),
-                    positions = session.pdrData.positions.toList(),
-                    stepCounts = session.pdrData.stepCounts.toList(),
-                    totalDistances = session.pdrData.totalDistances.toList(),
-                    headings = session.pdrData.headings.toList(),
-                    headingConfidences = session.pdrData.headingConfidences.toList(),
-                    overallConfidences = session.pdrData.overallConfidences.toList(),
-                    stepData = session.pdrData.stepData?.let { stepData ->
-                        StepDataSeriesJson(
-                            stepTimestamps = stepData.stepTimestamps.toList(),
-                            stepMagnitudes = stepData.stepMagnitudes.toList(),
-                            stepConfidences = stepData.stepConfidences.toList()
-                        )
-                    }
-                ),
-                pathHistory = session.pathHistory.map { position -> PositionJson(position.x, position.y) },
-                pathSegments = session.pathSegments.map { segment ->
-                    when (segment) {
-                        is PathSegment.Straight -> PathSegmentJson.Straight(
-                            headingRangeStart = segment.headingRange.start,
-                            headingRangeEnd = segment.headingRange.endInclusive,
-                            distance = segment.distance,
-                            steps = segment.steps
-                        )
-                        is PathSegment.Turn -> PathSegmentJson.Turn(
-                            direction = segment.direction.name,
-                            angle = segment.angle,
-                            steps = segment.steps
-                        )
-                    }
-                }
-            )
-            
-            val compactJson = json.encodeToString(trackingSessionJson)
-            val formattedJson = formatJsonCompact(compactJson)
-            
             val filesDir = context.filesDir
             val trackingDir = File(filesDir, "tracking_sessions")
             if (!trackingDir.exists()) {
                 trackingDir.mkdirs()
             }
-            
-            val file = File(trackingDir, "${sessionName}.json")
-            
-            FileWriter(file).use { writer ->
-                writer.write(formattedJson)
+
+            val csvFile = File(trackingDir, "$sessionName.csv")
+            FileWriter(csvFile).use { writer ->
+                writer.append("sessionName,${session.metadata.sessionName}\n")
+                writer.append("startTime,${session.metadata.startTime}\n")
+                writer.append("endTime,${session.metadata.endTime}\n")
+                writer.append("duration,${session.metadata.duration}\n")
+                writer.append("areaLength,${session.metadata.area.length}\n")
+                writer.append("areaWidth,${session.metadata.area.width}\n")
+                writer.append("\n")
+
+                writer.append("timestamp,ax,ay,az,rv_w,rv_x,rv_y,rv_z,accel_acc,rv_acc\n")
+                val raw = session.rawSensorData
+                val sampleCount = raw.timestamps.size
+                for (i in 0 until sampleCount) {
+                    val ts = raw.timestamps[i]
+                    val acc = if (i < raw.accelerometerSampleCount) raw.getAccelerometerSample(i) else floatArrayOf(0f,0f,0f)
+                    val rot = if (i < raw.rotationVectorSampleCount) raw.getRotationVectorSample(i) else floatArrayOf(0f,0f,0f,0f)
+                    val accAcc = raw.accelerometerAccuracy.getOrNull(i) ?: 0
+                    val rotAcc = raw.rotationVectorAccuracy.getOrNull(i) ?: 0
+                    writer.append("$ts,${acc[0]},${acc[1]},${acc[2]},${rot[0]},${rot[1]},${rot[2]},${rot[3]},$accAcc,$rotAcc\n")
+                }
+
+                writer.append("\n")
+                writer.append("timestamp,pos_x,pos_y,step_count,total_distance,heading,heading_confidence,overall_confidence\n")
+                val pdr = session.pdrData
+                for (i in 0 until pdr.sampleCount) {
+                    val ts = pdr.timestamps[i]
+                    val pos = pdr.getPosition(i)
+                    val stepCount = pdr.stepCounts[i]
+                    val totalDist = pdr.totalDistances[i]
+                    val heading = pdr.headings[i]
+                    val headingConf = pdr.headingConfidences[i]
+                    val overallConf = pdr.overallConfidences[i]
+                    writer.append("$ts,${pos.x},${pos.y},$stepCount,$totalDist,$heading,$headingConf,$overallConf\n")
+                }
+
+                pdr.stepData?.let { stepData ->
+                    writer.append("\nstep_timestamp,step_magnitude,step_confidence\n")
+                    for (i in 0 until stepData.stepCount) {
+                        writer.append("${stepData.stepTimestamps[i]},${stepData.stepMagnitudes[i]},${stepData.stepConfidences[i]}\n")
+                    }
+                }
             }
-            
+
+            val imageFile = File(trackingDir, "$sessionName.png")
+            val bitmap = generatePathBitmap(session.pathHistory, session.metadata.area, session.metadata.warehouseMap)
+            FileOutputStream(imageFile).use { out ->
+                bitmap.compress(CompressFormat.PNG, 100, out)
+            }
+
             true
         } catch (e: Exception) {
             e.printStackTrace()
             false
         }
     }
-    
-    private fun formatJsonCompact(jsonString: String): String {
-        val result = StringBuilder()
-        var indentLevel = 0
-        val indentSize = 2
-        
-        var i = 0
-        while (i < jsonString.length) {
-            val char = jsonString[i]
-            
-            when (char) {
-                '{' -> {
-                    result.append(" ".repeat(indentLevel * indentSize))
-                    result.append(char)
-                    result.append("\n")
-                    indentLevel++
-                }
-                '}' -> {
-                    indentLevel--
-                    result.append(" ".repeat(indentLevel * indentSize))
-                    result.append(char)
-                }
-                '[' -> {
-                    result.append(" ".repeat(indentLevel * indentSize))
-                    result.append(char)
-                    var bracketCount = 1
-                    var arrayContent = StringBuilder()
-                    i++
-                    
-                    while (i < jsonString.length && bracketCount > 0) {
-                        val nextChar = jsonString[i]
-                        when (nextChar) {
-                            '[' -> bracketCount++
-                            ']' -> bracketCount--
-                        }
-                        if (bracketCount > 0) {
-                            arrayContent.append(nextChar)
-                        }
-                        i++
-                    }
-                    result.append(arrayContent.toString())
-                    result.append("]")
-                    i--
-                }
-                ',' -> {
-                    result.append(char)
-                    if (i + 1 < jsonString.length && jsonString[i + 1] != '{' && jsonString[i + 1] != '[') {
-                        result.append("\n")
-                    }
-                }
-                ':' -> {
-                    result.append(char)
-                    result.append(" ")
-                }
-                else -> {
-                    if (!char.isWhitespace()) {
-                        result.append(char)
-                    }
-                }
-            }
-            i++
+
+    private fun generatePathBitmap(
+        pathHistory: List<Position>,
+        area: Area,
+        warehouseMap: WarehouseMap?,
+        width: Int = 400,
+        height: Int = 400
+    ): Bitmap {
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(Color.WHITE)
+        val horizontalBoxes = warehouseMap?.width ?: area.length.toInt().coerceAtLeast(1)
+        val verticalBoxes = warehouseMap?.height ?: area.width.toInt().coerceAtLeast(1)
+        val maxX = warehouseMap?.width?.toFloat() ?: area.length
+        val maxY = warehouseMap?.height?.toFloat() ?: area.width
+        val cellSize = kotlin.math.min(width.toFloat() / horizontalBoxes, height.toFloat() / verticalBoxes)
+        val gridWidth = cellSize * horizontalBoxes
+        val gridHeight = cellSize * verticalBoxes
+        val startX = (width - gridWidth) / 2f
+        val startY = (height - gridHeight) / 2f
+        val paint = Paint().apply { color = Color.BLACK; style = Paint.Style.STROKE }
+        for (i in 0..horizontalBoxes) {
+            val x = startX + i * cellSize
+            canvas.drawLine(x, startY, x, startY + gridHeight, paint)
         }
-        
-        return result.toString()
+        for (j in 0..verticalBoxes) {
+            val y = startY + j * cellSize
+            canvas.drawLine(startX, y, startX + gridWidth, y, paint)
+        }
+        paint.color = Color.BLUE
+        paint.strokeWidth = 3f
+        for (i in 1 until pathHistory.size) {
+            val prev = pathHistory[i-1]
+            val curr = pathHistory[i]
+            val prevX = startX + (prev.x / maxX) * gridWidth
+            val prevY = startY + (prev.y / maxY) * gridHeight
+            val currX = startX + (curr.x / maxX) * gridWidth
+            val currY = startY + (curr.y / maxY) * gridHeight
+            canvas.drawLine(prevX, prevY, currX, currY, paint)
+        }
+        return bitmap
     }
+    
     
     fun getCurrentSession(
         sessionName: String,
