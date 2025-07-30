@@ -1,6 +1,7 @@
 package com.example.sensortracking.util
 
 import android.content.Context
+import android.net.Uri
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -20,6 +21,29 @@ object CSVParser {
             reader.close()
             inputStream.close()
             
+            lines.toTypedArray()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    fun parseCSVUri(context: Context, uri: Uri): Array<Array<String>>? {
+        return try {
+            val inputStream = context.contentResolver.openInputStream(uri)
+                ?: return null
+            val reader = BufferedReader(InputStreamReader(inputStream))
+            val lines = mutableListOf<Array<String>>()
+
+            var line: String?
+            while (reader.readLine().also { line = it } != null) {
+                val values = parseCSVLine(line!!)
+                lines.add(values)
+            }
+
+            reader.close()
+            inputStream.close()
+
             lines.toTypedArray()
         } catch (e: Exception) {
             e.printStackTrace()

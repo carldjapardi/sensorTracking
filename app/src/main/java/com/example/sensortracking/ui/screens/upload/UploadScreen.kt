@@ -28,8 +28,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import com.example.sensortracking.data.WarehouseMap
 import com.example.sensortracking.ui.screens.upload.uploadScreenDialog.FloorPlanSelectionDialog
+import com.example.sensortracking.ui.screens.upload.uploadScreenDialog.CustomFloorPlanDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +41,18 @@ fun UploadScreen(
 ) {
     var showFloorPlanDialog by remember { mutableStateOf(false) }
     var selectedFloorPlan by remember { mutableStateOf<WarehouseMap?>(null) }
+    var showCustomDialog by remember { mutableStateOf(false) }
+    var customCsvUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var customFloorPlan by remember { mutableStateOf<WarehouseMap?>(null) }
+
+    val openDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            customCsvUri = uri
+            showCustomDialog = true
+        }
+    }
     
     Scaffold(
         topBar = {
@@ -78,11 +93,18 @@ fun UploadScreen(
             item {
                 FloorPlanCard(
                     title = "Upload Custom Floor Plan",
-                    description = "Upload your own Excel floor plan (Coming Soon)",
+                    description = "Upload your own CSV floor plan",
                     onSelect = {
-                        // TODO: Implement file upload
+                        openDocumentLauncher.launch(
+                            arrayOf(
+                                "text/csv",
+                                "text/comma-separated-values",
+                                "text/plain",
+                                "application/vnd.ms-excel"
+                            )
+                        )
                     },
-                    enabled = false
+                    enabled = true
                 )
             }
         }
@@ -98,6 +120,24 @@ fun UploadScreen(
             onDismiss = { showFloorPlanDialog = false },
             onFloorPlanLoaded = { warehouseMap ->
                 selectedFloorPlan = warehouseMap
+            }
+        )
+    }
+
+    if (showCustomDialog && customCsvUri != null) {
+        CustomFloorPlanDialog(
+            csvUri = customCsvUri!!,
+            onConfirm = {
+                customFloorPlan?.let { onFloorPlanSelected(it) }
+                showCustomDialog = false
+                customCsvUri = null
+            },
+            onDismiss = {
+                showCustomDialog = false
+                customCsvUri = null
+            },
+            onFloorPlanLoaded = { warehouseMap ->
+                customFloorPlan = warehouseMap
             }
         )
     }
