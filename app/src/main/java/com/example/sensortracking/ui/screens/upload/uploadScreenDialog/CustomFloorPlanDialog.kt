@@ -39,7 +39,6 @@ fun CustomFloorPlanDialog(
             val fileDescriptor = context.contentResolver.openFileDescriptor(csvUri, "r")
             val fileSize = fileDescriptor?.statSize ?: 0L
             fileDescriptor?.close()
-
             val csvData = CSVParser.parseCSVUri(context, csvUri)
             if (csvData != null) {
                 val warehouseMapProcessor = WarehouseMapProcessor()

@@ -86,10 +86,7 @@ fun UploadScreen(
         }
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
@@ -98,7 +95,6 @@ fun UploadScreen(
                     style = MaterialTheme.typography.headlineSmall
                 )
             }
-
             item {
                 val (rows, cols, size) = exampleMetadata
                 FloorPlanCard(
@@ -183,12 +179,7 @@ fun UploadScreen(
 }
 
 @Composable
-fun FloorPlanCard(
-    title: String,
-    description: String,
-    onSelect: () -> Unit,
-    enabled: Boolean = true
-) {
+fun FloorPlanCard(title: String, description: String, onSelect: () -> Unit, enabled: Boolean = true) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = { if (enabled) onSelect() },

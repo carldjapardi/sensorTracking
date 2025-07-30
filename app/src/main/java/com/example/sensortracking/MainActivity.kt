@@ -16,7 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.sensortracking.ui.screens.HomeScreen
+import com.example.sensortracking.ui.screens.home.HomeScreen
 import com.example.sensortracking.ui.screens.track.TrackScreen
 import com.example.sensortracking.ui.screens.upload.UploadScreen
 import com.example.sensortracking.ui.screens.SettingsScreen
