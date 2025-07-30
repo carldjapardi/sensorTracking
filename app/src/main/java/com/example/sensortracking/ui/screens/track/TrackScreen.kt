@@ -190,7 +190,7 @@ fun TrackScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Intellinum") },
+                title = { Text("Tracking") },
                 actions = {
                     IconButton(onClick = { /* TODO: More options */ }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "More options")

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.MoreVert
@@ -21,29 +22,40 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.sensortracking.data.WarehouseMap
+import com.example.sensortracking.data.UploadedFloorPlan
 import com.example.sensortracking.ui.screens.upload.uploadScreenDialog.FloorPlanSelectionDialog
 import com.example.sensortracking.ui.screens.upload.uploadScreenDialog.CustomFloorPlanDialog
+import com.example.sensortracking.ui.screens.upload.uploadScreenDialog.SaveFloorPlanDialog
+import com.example.sensortracking.util.UploadedFloorPlanManager
+import com.example.sensortracking.ui.screens.upload.UploadedFloorPlanCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UploadScreen(
     onFloorPlanSelected: (WarehouseMap) -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val floorPlanManager = remember { UploadedFloorPlanManager(context) }
+    
     var showFloorPlanDialog by remember { mutableStateOf(false) }
     var selectedFloorPlan by remember { mutableStateOf<WarehouseMap?>(null) }
     var showCustomDialog by remember { mutableStateOf(false) }
     var customCsvUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var customFloorPlan by remember { mutableStateOf<WarehouseMap?>(null) }
+    var showSaveDialog by remember { mutableStateOf(false) }
+    var uploadedFloorPlans by remember { mutableStateOf<List<UploadedFloorPlan>>(emptyList()) }
 
     val openDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -52,6 +64,10 @@ fun UploadScreen(
             customCsvUri = uri
             showCustomDialog = true
         }
+    }
+    
+    LaunchedEffect(Unit) {
+        uploadedFloorPlans = floorPlanManager.getUploadedFloorPlans()
     }
     
     Scaffold(
@@ -78,6 +94,38 @@ fun UploadScreen(
                     text = "Available Floor Plans",
                     style = MaterialTheme.typography.headlineSmall
                 )
+            }
+            
+            if (uploadedFloorPlans.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Uploaded Floor Plans",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                
+                items(uploadedFloorPlans) { floorPlan ->
+                    UploadedFloorPlanCard(
+                        floorPlan = floorPlan,
+                        onSelect = { selectedFloorPlan ->
+                            onFloorPlanSelected(selectedFloorPlan.warehouseMap)
+                        },
+                        onDelete = { floorPlanToDelete ->
+                            floorPlanManager.deleteFloorPlan(floorPlanToDelete.id)
+                            uploadedFloorPlans = floorPlanManager.getUploadedFloorPlans()
+                        }
+                    )
+                }
+                
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Built-in Floor Plans",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
             
             item {
@@ -128,9 +176,10 @@ fun UploadScreen(
         CustomFloorPlanDialog(
             csvUri = customCsvUri!!,
             onConfirm = {
-                customFloorPlan?.let { onFloorPlanSelected(it) }
+                customFloorPlan?.let { warehouseMap ->
+                    showSaveDialog = true
+                }
                 showCustomDialog = false
-                customCsvUri = null
             },
             onDismiss = {
                 showCustomDialog = false
@@ -138,6 +187,29 @@ fun UploadScreen(
             },
             onFloorPlanLoaded = { warehouseMap ->
                 customFloorPlan = warehouseMap
+            }
+        )
+    }
+    
+    if (showSaveDialog && customFloorPlan != null && customCsvUri != null) {
+        SaveFloorPlanDialog(
+            onConfirm = { name, description ->
+                val savedFloorPlan = floorPlanManager.saveFloorPlan(
+                    name = name,
+                    description = description,
+                    uri = customCsvUri!!,
+                    warehouseMap = customFloorPlan!!
+                )
+                uploadedFloorPlans = floorPlanManager.getUploadedFloorPlans()
+                onFloorPlanSelected(customFloorPlan!!)
+                showSaveDialog = false
+                customCsvUri = null
+                customFloorPlan = null
+            },
+            onDismiss = {
+                showSaveDialog = false
+                customCsvUri = null
+                customFloorPlan = null
             }
         )
     }

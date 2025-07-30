@@ -61,4 +61,23 @@ class WarehouseMapProcessor {
         }
         return clampedPos
     }
+    
+    fun serializeWarehouseMap(warehouseMap: WarehouseMap): String {
+        val csvData = Array(warehouseMap.height) { y ->
+            Array(warehouseMap.width) { x ->
+                val cell = warehouseMap.cells[y][x]
+                when (cell.cellType) {
+                    CellType.START -> "START"
+                    CellType.END -> "END"
+                    CellType.AISLE -> "A:"
+                    CellType.WALL -> "NP"
+                    CellType.STORAGE -> cell.storageLocation ?: "NP"
+                }
+            }
+        }
+        
+        return csvData.joinToString("\n") { row ->
+            row.joinToString(",")
+        }
+    }
 } 
