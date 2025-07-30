@@ -1,4 +1,4 @@
-package com.example.sensortracking.ui.screens
+package com.example.sensortracking.ui.screens.home
 
 import android.content.Context
 import android.content.Intent
@@ -32,7 +32,7 @@ class HomeScreenViewModel : ViewModel() {
         loadTrackingSessions()
     }
     
-    fun loadTrackingSessions() {
+    private fun loadTrackingSessions() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             

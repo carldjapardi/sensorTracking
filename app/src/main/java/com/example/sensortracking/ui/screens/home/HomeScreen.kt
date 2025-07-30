@@ -1,4 +1,4 @@
-package com.example.sensortracking.ui.screens
+package com.example.sensortracking.ui.screens.home
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -116,21 +116,12 @@ fun HomeScreen(
 }
 
 @Composable
-fun CsvDialog(
-    csvContent: String,
-    onDismiss: () -> Unit
-) {
+fun CsvDialog(csvContent: String, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text("Session CSV Data")
-        },
+        title = { Text("Session CSV Data") },
         text = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 400.dp)
-            ) {
+            Box(modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)) {
                 Text(
                     text = csvContent,
                     fontFamily = FontFamily.Monospace,
@@ -144,21 +135,14 @@ fun CsvDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close")
-            }
+            TextButton(onClick = onDismiss) { Text("Close") }
         },
         modifier = Modifier.fillMaxWidth(0.95f)
     )
 }
 
 @Composable
-fun TrackingSessionCard(
-    session: TrackingSessionInfo,
-    onDelete: () -> Unit,
-    onShare: () -> Unit,
-    onView: () -> Unit
-) {
+fun TrackingSessionCard(session: TrackingSessionInfo, onDelete: () -> Unit, onShare: () -> Unit, onView: () -> Unit) {
     val context = LocalContext.current
     val sessionManager = remember { TrackingSessionManager(context) }
     val imageBitmap = remember(session.imageFileName) {
@@ -240,10 +224,7 @@ fun TrackingSessionCard(
 }
 
 @Composable
-fun SessionInfoItem(
-    label: String,
-    value: String
-) {
+fun SessionInfoItem(label: String, value: String) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

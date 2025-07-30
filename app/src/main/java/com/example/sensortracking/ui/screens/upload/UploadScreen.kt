@@ -30,6 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sensortracking.data.WarehouseMap
 import com.example.sensortracking.ui.screens.upload.uploadScreenDialog.FloorPlanSelectionDialog
 import com.example.sensortracking.ui.screens.upload.uploadScreenDialog.CustomFloorPlanDialog
@@ -37,8 +39,10 @@ import com.example.sensortracking.ui.screens.upload.uploadScreenDialog.CustomFlo
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UploadScreen(
-    onFloorPlanSelected: (WarehouseMap) -> Unit = {}
+    onFloorPlanSelected: (WarehouseMap) -> Unit = {},
+    viewModel: UploadScreenViewModel = viewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
     var showFloorPlanDialog by remember { mutableStateOf(false) }
     var selectedFloorPlan by remember { mutableStateOf<WarehouseMap?>(null) }
     var showCustomDialog by remember { mutableStateOf(false) }
@@ -67,19 +71,10 @@ fun UploadScreen(
         }
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
-                Text(
-                    text = "Available Floor Plans",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-            }
-            
+            items(uiState.floorPlans) ->
             item {
                 FloorPlanCard(
                     title = "Example Warehouse (CSV)",
@@ -144,12 +139,7 @@ fun UploadScreen(
 }
 
 @Composable
-fun FloorPlanCard(
-    title: String,
-    description: String,
-    onSelect: () -> Unit,
-    enabled: Boolean = true
-) {
+fun FloorPlanCard(title: String, description: String, onSelect: () -> Unit, enabled: Boolean = true) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = { if (enabled) onSelect() },
