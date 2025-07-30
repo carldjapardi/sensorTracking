@@ -28,7 +28,7 @@ fun CustomFloorPlanDialog(
     csvUri: Uri,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    onFloorPlanLoaded: (WarehouseMap) -> Unit
+    onFloorPlanLoaded: (WarehouseMap, Long) -> Unit
 ) {
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(true) }
@@ -36,11 +36,14 @@ fun CustomFloorPlanDialog(
 
     LaunchedEffect(csvUri) {
         try {
+            val fileDescriptor = context.contentResolver.openFileDescriptor(csvUri, "r")
+            val fileSize = fileDescriptor?.statSize ?: 0L
+            fileDescriptor?.close()
             val csvData = CSVParser.parseCSVUri(context, csvUri)
             if (csvData != null) {
                 val warehouseMapProcessor = WarehouseMapProcessor()
                 val warehouseMap = warehouseMapProcessor.parseWarehouseMap(csvData)
-                onFloorPlanLoaded(warehouseMap)
+                onFloorPlanLoaded(warehouseMap, fileSize)
             } else {
                 errorMessage = "Failed to load floor plan"
             }
