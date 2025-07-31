@@ -21,9 +21,10 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 class PDRSensorManager(private val context: Context, private val pdrProcessor: PDRProcessor) : SensorEventListener {
     private val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    // Only using accelerometer and rotation vector for PDR, rotation vector is used for heading and will initialize gyroscope and magnetometer
+    // Primary sensors used for PDR. Gyroscope is logged for neural processing
     private var accelerometer: FloatArray = FloatArray(3)
     private var rotationVector: FloatArray = FloatArray(4)
+    private var gyroscope: FloatArray = FloatArray(3)
 
     private var hasAccelerometer = false
     private var hasGyroscope = false
@@ -73,6 +74,15 @@ class PDRSensorManager(private val context: Context, private val pdrProcessor: P
                     event.accuracy
                 )
                 processSensorData()
+            }
+            Sensor.TYPE_GYROSCOPE -> {
+                System.arraycopy(event.values, 0, gyroscope, 0, 3)
+                sensorDataLogger.logSensorData(
+                    event.timestamp / 1000000,
+                    SensorType.GYROSCOPE,
+                    event.values,
+                    event.accuracy
+                )
             }
             Sensor.TYPE_ROTATION_VECTOR -> {
                 System.arraycopy(event.values, 0, rotationVector, 0, 4)

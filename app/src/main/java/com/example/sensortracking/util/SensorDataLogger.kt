@@ -23,8 +23,10 @@ class SensorDataLogger {
     private val timestamps = mutableListOf<Long>()
     private val accelerometerData = mutableListOf<Float>()
     private val rotationVectorData = mutableListOf<Float>()
+    private val gyroscopeData = mutableListOf<Float>()
     private val accelerometerAccuracy = mutableListOf<Int>()
     private val rotationVectorAccuracy = mutableListOf<Int>()
+    private val gyroscopeAccuracy = mutableListOf<Int>()
     
     private val pdrTimestamps = mutableListOf<Long>()
     private val pdrPositions = mutableListOf<Float>()
@@ -49,8 +51,10 @@ class SensorDataLogger {
         timestamps.clear()
         accelerometerData.clear()
         rotationVectorData.clear()
+        gyroscopeData.clear()
         accelerometerAccuracy.clear()
         rotationVectorAccuracy.clear()
+        gyroscopeAccuracy.clear()
         
         pdrTimestamps.clear()
         pdrPositions.clear()
@@ -88,6 +92,10 @@ class SensorDataLogger {
                     rotationVectorData.addAll(values.toList())
                     rotationVectorAccuracy.add(accuracy)
                 }
+                SensorType.GYROSCOPE -> {
+                    gyroscopeData.addAll(values.toList())
+                    gyroscopeAccuracy.add(accuracy)
+                }
             }
             
             lastLogTime = timestamp
@@ -113,7 +121,12 @@ class SensorDataLogger {
         }
     }
     
-    fun saveToFile(context: Context, sessionName: String, session: TrackingSession): Boolean {
+    fun saveToFile(
+        context: Context,
+        sessionName: String,
+        session: TrackingSession,
+        neuralPath: List<Position>? = null
+    ): Boolean {
         return try {
             val filesDir = context.filesDir
             val trackingDir = File(filesDir, "tracking_sessions")
@@ -131,16 +144,18 @@ class SensorDataLogger {
                 writer.append("areaWidth,${session.metadata.area.width}\n")
                 writer.append("\n")
 
-                writer.append("timestamp,ax,ay,az,rv_w,rv_x,rv_y,rv_z,accel_acc,rv_acc\n")
+                writer.append("timestamp,ax,ay,az,gx,gy,gz,rv_w,rv_x,rv_y,rv_z,accel_acc,gyro_acc,rv_acc\n")
                 val raw = session.rawSensorData
                 val sampleCount = raw.timestamps.size
                 for (i in 0 until sampleCount) {
                     val ts = raw.timestamps[i]
                     val acc = if (i < raw.accelerometerSampleCount) raw.getAccelerometerSample(i) else floatArrayOf(0f,0f,0f)
                     val rot = if (i < raw.rotationVectorSampleCount) raw.getRotationVectorSample(i) else floatArrayOf(0f,0f,0f,0f)
+                    val gyro = if (i < raw.gyroscopeSampleCount) raw.getGyroscopeSample(i) else floatArrayOf(0f,0f,0f)
                     val accAcc = raw.accelerometerAccuracy.getOrNull(i) ?: 0
+                    val gyroAcc = raw.gyroscopeAccuracy.getOrNull(i) ?: 0
                     val rotAcc = raw.rotationVectorAccuracy.getOrNull(i) ?: 0
-                    writer.append("$ts,${acc[0]},${acc[1]},${acc[2]},${rot[0]},${rot[1]},${rot[2]},${rot[3]},$accAcc,$rotAcc\n")
+                    writer.append("$ts,${acc[0]},${acc[1]},${acc[2]},${gyro[0]},${gyro[1]},${gyro[2]},${rot[0]},${rot[1]},${rot[2]},${rot[3]},$accAcc,$gyroAcc,$rotAcc\n")
                 }
 
                 writer.append("\n")
@@ -169,6 +184,14 @@ class SensorDataLogger {
             val bitmap = generatePathBitmap(session.pathHistory, session.metadata.area, session.metadata.warehouseMap)
             FileOutputStream(imageFile).use { out ->
                 bitmap.compress(CompressFormat.PNG, 100, out)
+            }
+
+            neuralPath?.let { path ->
+                val nnImage = generatePathBitmap(path, session.metadata.area, session.metadata.warehouseMap)
+                val nnFile = File(trackingDir, "${sessionName}_nn.png")
+                FileOutputStream(nnFile).use { out ->
+                    nnImage.compress(CompressFormat.PNG, 100, out)
+                }
             }
 
             true
@@ -235,8 +258,10 @@ class SensorDataLogger {
             timestamps = timestamps.toLongArray(),
             accelerometerData = accelerometerData.toFloatArray(),
             rotationVectorData = rotationVectorData.toFloatArray(),
+            gyroscopeData = gyroscopeData.toFloatArray(),
             accelerometerAccuracy = accelerometerAccuracy.toIntArray(),
-            rotationVectorAccuracy = rotationVectorAccuracy.toIntArray()
+            rotationVectorAccuracy = rotationVectorAccuracy.toIntArray(),
+            gyroscopeAccuracy = gyroscopeAccuracy.toIntArray()
         )
         
         val stepDataSeries = if (stepTimestamps.isNotEmpty()) {
