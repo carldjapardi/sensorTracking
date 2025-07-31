@@ -19,7 +19,7 @@ class NeuralPathProcessor(context: Context, modelAssetPath: String) {
 
     init {
         val modelBytes = context.assets.open(modelAssetPath).use { it.readBytes() }
-        val options = SessionOptions()
+        val options = OrtSession.SessionOptions()
         session = env.createSession(modelBytes, options)
     }
 
