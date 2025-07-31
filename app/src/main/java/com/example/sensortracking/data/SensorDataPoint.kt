@@ -28,5 +28,6 @@ data class SensorDataPoint(
 
 enum class SensorType {
     ACCELEROMETER,
-    ROTATION_VECTOR
-} 
+    ROTATION_VECTOR,
+    GYROSCOPE
+}

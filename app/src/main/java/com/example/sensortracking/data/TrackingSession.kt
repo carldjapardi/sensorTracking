@@ -24,11 +24,14 @@ data class RawSensorData(
     val timestamps: LongArray,
     val accelerometerData: FloatArray,
     val rotationVectorData: FloatArray,
+    val gyroscopeData: FloatArray,
     val accelerometerAccuracy: IntArray,
-    val rotationVectorAccuracy: IntArray
+    val rotationVectorAccuracy: IntArray,
+    val gyroscopeAccuracy: IntArray
 ) {
     val accelerometerSampleCount: Int get() = accelerometerData.size / 3
     val rotationVectorSampleCount: Int get() = rotationVectorData.size / 4
+    val gyroscopeSampleCount: Int get() = gyroscopeData.size / 3
     
     fun getAccelerometerSample(index: Int): FloatArray {
         val startIndex = index * 3
@@ -48,6 +51,15 @@ data class RawSensorData(
             rotationVectorData[startIndex + 3]
         )
     }
+
+    fun getGyroscopeSample(index: Int): FloatArray {
+        val startIndex = index * 3
+        return floatArrayOf(
+            gyroscopeData[startIndex],
+            gyroscopeData[startIndex + 1],
+            gyroscopeData[startIndex + 2]
+        )
+    }
     
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -56,8 +68,10 @@ data class RawSensorData(
         if (!timestamps.contentEquals(other.timestamps)) return false
         if (!accelerometerData.contentEquals(other.accelerometerData)) return false
         if (!rotationVectorData.contentEquals(other.rotationVectorData)) return false
+        if (!gyroscopeData.contentEquals(other.gyroscopeData)) return false
         if (!accelerometerAccuracy.contentEquals(other.accelerometerAccuracy)) return false
         if (!rotationVectorAccuracy.contentEquals(other.rotationVectorAccuracy)) return false
+        if (!gyroscopeAccuracy.contentEquals(other.gyroscopeAccuracy)) return false
         return true
     }
 
@@ -65,8 +79,10 @@ data class RawSensorData(
         var result = timestamps.contentHashCode()
         result = 31 * result + accelerometerData.contentHashCode()
         result = 31 * result + rotationVectorData.contentHashCode()
+        result = 31 * result + gyroscopeData.contentHashCode()
         result = 31 * result + accelerometerAccuracy.contentHashCode()
         result = 31 * result + rotationVectorAccuracy.contentHashCode()
+        result = 31 * result + gyroscopeAccuracy.contentHashCode()
         return result
     }
 }

@@ -1,6 +1,7 @@
 package com.example.sensortracking.ui.screens.track.trackScreenDialog
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.Alignment
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -25,6 +26,7 @@ fun SaveTrackingDialog(
         ) 
     }
     var isSaving by remember { mutableStateOf(false) }
+    var runNeural by remember { mutableStateOf(false) }
     
     AlertDialog(
         onDismissRequest = { if (!isSaving) onDismiss() },
@@ -42,7 +44,11 @@ fun SaveTrackingDialog(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isSaving
                 )
-                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = runNeural, onCheckedChange = { runNeural = it })
+                    Text("Generate neural network path")
+                }
+
             }
         },
         confirmButton = {
@@ -50,7 +56,7 @@ fun SaveTrackingDialog(
                 onClick = {
                     if (sessionName.isNotBlank() && !isSaving) {
                         isSaving = true
-                        val success = viewModel.saveTracking(context, sessionName)
+                        val success = viewModel.saveTracking(context, sessionName, runNeural)
                         isSaving = false
                         if (success) {
                             onDismiss()

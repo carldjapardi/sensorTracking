@@ -14,6 +14,7 @@ import com.example.sensortracking.sensor.log.LogAnalyzer
 import com.example.sensortracking.sensor.log.PathReconstructor
 import com.example.sensortracking.sensor.pdr.WarehouseMapProcessor
 import com.example.sensortracking.util.SensorDataLogger
+import com.example.sensortracking.nn.NeuralPathProcessor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -159,7 +160,7 @@ class TrackScreenViewModel : ViewModel() {
         _uiState.update { it.copy(pdrData = null, isTracking = false) }
     }
     
-    fun saveTracking(context: Context, sessionName: String): Boolean {
+    fun saveTracking(context: Context, sessionName: String, runNeural: Boolean): Boolean {
         val sensorDataLogger = pdrSensorManager?.getSensorDataLogger()
         if (sensorDataLogger == null) return false
         
@@ -174,8 +175,17 @@ class TrackScreenViewModel : ViewModel() {
             pathHistory = pathHistory,
             pathSegments = pathSegments
         )
-        
-        return sensorDataLogger.saveToFile(context, sessionName, session)
+
+        val nnPath = if (runNeural) {
+            try {
+                val processor = NeuralPathProcessor(context, "path_model.onnx")
+                processor.predictPath(session.rawSensorData)
+            } catch (e: Exception) {
+                null
+            }
+        } else null
+
+        return sensorDataLogger.saveToFile(context, sessionName, session, nnPath)
     }
     
     fun updatePDRConfig(newConfig: PDRConfig) {
