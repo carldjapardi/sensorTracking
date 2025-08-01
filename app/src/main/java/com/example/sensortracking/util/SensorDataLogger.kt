@@ -41,7 +41,11 @@ class SensorDataLogger {
     private val stepConfidences = mutableListOf<Float>()
     
     private var sessionStartTime: Long = 0
-    private var lastLogTime: Long = 0
+    // Track the last logged timestamp separately for each sensor type so that
+    // slower sensors do not get throttled by faster ones.
+    private var lastAccelLogTime: Long = 0
+    private var lastGyroLogTime: Long = 0
+    private var lastRvLogTime: Long = 0
     private val samplingInterval = 20L // 50 Hz sampling rate (20ms interval)
     
     private val _isLogging = MutableStateFlow(false)
@@ -69,7 +73,9 @@ class SensorDataLogger {
         stepConfidences.clear()
         
         sessionStartTime = System.currentTimeMillis()
-        lastLogTime = 0
+        lastAccelLogTime = 0
+        lastGyroLogTime = 0
+        lastRvLogTime = 0
         _isLogging.value = true
     }
     
@@ -79,26 +85,34 @@ class SensorDataLogger {
     
     fun logSensorData(timestamp: Long, sensorType: SensorType, values: FloatArray, accuracy: Int) {
         if (!_isLogging.value) return
-        
-        if (timestamp - lastLogTime >= samplingInterval) {
+
+        // Select the correct timestamp gate for this sensor type
+        val lastTime = when (sensorType) {
+            SensorType.ACCELEROMETER -> lastAccelLogTime
+            SensorType.GYROSCOPE -> lastGyroLogTime
+            SensorType.ROTATION_VECTOR -> lastRvLogTime
+        }
+
+        if (timestamp - lastTime >= samplingInterval) {
             timestamps.add(timestamp)
-            
+
             when (sensorType) {
                 SensorType.ACCELEROMETER -> {
                     accelerometerData.addAll(values.toList())
                     accelerometerAccuracy.add(accuracy)
+                    lastAccelLogTime = timestamp
                 }
                 SensorType.ROTATION_VECTOR -> {
                     rotationVectorData.addAll(values.toList())
                     rotationVectorAccuracy.add(accuracy)
+                    lastRvLogTime = timestamp
                 }
                 SensorType.GYROSCOPE -> {
                     gyroscopeData.addAll(values.toList())
                     gyroscopeAccuracy.add(accuracy)
+                    lastGyroLogTime = timestamp
                 }
             }
-            
-            lastLogTime = timestamp
         }
     }
     

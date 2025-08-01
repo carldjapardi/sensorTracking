@@ -25,6 +25,8 @@ class NeuralPathProcessor(context: Context, modelAssetPath: String) {
     private var gyroBias: FloatArray? = null
     private var accelBias: FloatArray? = null
     private var isCalibrated = false
+    private var gyroScale: FloatArray = floatArrayOf(1f, 1f, 1f)
+    private var accelScale: FloatArray = floatArrayOf(1f, 1f, 1f)
 
     init {
         Log.d("NeuralPathProcessor", "Loading ONNX model from: $modelAssetPath")
@@ -81,6 +83,20 @@ class NeuralPathProcessor(context: Context, modelAssetPath: String) {
         } else {
             Log.w("NeuralPathProcessor", "Calibration quality poor - gyro: $isGyroReasonable, accel: $isAccelReasonable")
             return false
+        }
+    }
+
+    /**
+     * Optional scale factors for gyro and accelerometer measurements. RoNIN's
+     * training data applies sensor-specific scales before rotating to the world
+     * frame. These factors can be provided if known; otherwise a value of 1 is
+     * used.
+     */
+    fun setScaleFactors(accel: FloatArray, gyro: FloatArray) {
+        if (accel.size >= 3 && gyro.size >= 3) {
+            accelScale = accel.copyOf(3)
+            gyroScale = gyro.copyOf(3)
+            Log.d("NeuralPathProcessor", "Applied scale factors - accel=${accelScale.contentToString()}, gyro=${gyroScale.contentToString()}")
         }
     }
 
@@ -151,10 +167,10 @@ class NeuralPathProcessor(context: Context, modelAssetPath: String) {
                 val accWorld = FloatArray(3)
                 val gyroWorld = FloatArray(3)
                 
-                // Apply bias correction
+                // Apply bias correction and scale factors
                 for (j in 0..2) {
-                    accWorld[j] = rawData.accelerometerData[accIdx + j] - accelBias[j]
-                    gyroWorld[j] = rawData.gyroscopeData[gyroIdx + j] - gyroBias[j]
+                    accWorld[j] = (rawData.accelerometerData[accIdx + j] - accelBias[j]) * accelScale[j]
+                    gyroWorld[j] = (rawData.gyroscopeData[gyroIdx + j] - gyroBias[j]) * gyroScale[j]
                 }
                 
                 // Transform to world coordinates using rotation vector
@@ -246,20 +262,14 @@ class NeuralPathProcessor(context: Context, modelAssetPath: String) {
                 val scaledDeltaX = deltaX * scaleFactor
                 val scaledDeltaY = deltaY * scaleFactor
                 
-                // Apply additional scaling to make the path more visible
-                // The model might be outputting velocity in a different scale than expected
-                val outputScale = 10.0f // Scale factor to make path more visible
-                val finalDeltaX = scaledDeltaX * outputScale
-                val finalDeltaY = scaledDeltaY * outputScale
-                
                 // Integrate velocity to get position change
-                val posDeltaX = finalDeltaX * timeStep
-                val posDeltaY = finalDeltaY * timeStep
+                val posDeltaX = scaledDeltaX * timeStep
+                val posDeltaY = scaledDeltaY * timeStep
                 
                 x += posDeltaX
                 y += posDeltaY
                 
-                Log.d("NeuralPathProcessor", "Window $windowIdx: velocity=($deltaX, $deltaY), scaled=($scaledDeltaX, $scaledDeltaY), final=($finalDeltaX, $finalDeltaY), timeStep=$timeStep, posDelta=($posDeltaX, $posDeltaY), pos=($x, $y)")
+                Log.d("NeuralPathProcessor", "Window $windowIdx: velocity=($deltaX, $deltaY), scaled=($scaledDeltaX, $scaledDeltaY), timeStep=$timeStep, posDelta=($posDeltaX, $posDeltaY), pos=($x, $y)")
                 
                 path.add(Position(x, y))
             }
