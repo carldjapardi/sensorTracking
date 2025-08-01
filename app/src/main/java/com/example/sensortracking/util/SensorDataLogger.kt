@@ -41,12 +41,10 @@ class SensorDataLogger {
     private val stepConfidences = mutableListOf<Float>()
     
     private var sessionStartTime: Long = 0
-    // Track the last logged timestamp separately for each sensor type so that
-    // slower sensors do not get throttled by faster ones.
     private var lastAccelLogTime: Long = 0
     private var lastGyroLogTime: Long = 0
     private var lastRvLogTime: Long = 0
-    private val samplingInterval = 20L // 50 Hz sampling rate (20ms interval)
+    private val samplingInterval = 20L
     
     private val _isLogging = MutableStateFlow(false)
     val isLogging: StateFlow<Boolean> = _isLogging.asStateFlow()
@@ -141,14 +139,11 @@ class SensorDataLogger {
         session: TrackingSession,
         neuralPath: List<Position>? = null
     ): Boolean {
-        android.util.Log.d("SensorDataLogger", "Saving to file: $sessionName, neuralPath size: ${neuralPath?.size ?: 0}")
-        
         return try {
             val filesDir = context.filesDir
             val trackingDir = File(filesDir, "tracking_sessions")
             if (!trackingDir.exists()) {
                 trackingDir.mkdirs()
-                android.util.Log.d("SensorDataLogger", "Created tracking directory: ${trackingDir.absolutePath}")
             }
 
             val csvFile = File(trackingDir, "$sessionName.csv")
@@ -198,7 +193,6 @@ class SensorDataLogger {
             }
 
             val imageFile = File(trackingDir, "$sessionName.png")
-            android.util.Log.d("SensorDataLogger", "Saving original PDR path to: ${imageFile.absolutePath}")
             val bitmap = generatePathBitmap(session.pathHistory, session.metadata.area, session.metadata.warehouseMap)
             FileOutputStream(imageFile).use { out ->
                 bitmap.compress(CompressFormat.PNG, 100, out)
@@ -207,20 +201,13 @@ class SensorDataLogger {
             neuralPath?.let { path ->
                 val nnImage = generatePathBitmap(path, session.metadata.area, session.metadata.warehouseMap)
                 val nnFile = File(trackingDir, "${sessionName}_nn.png")
-                android.util.Log.d("SensorDataLogger", "Saving neural network path to: ${nnFile.absolutePath}")
                 FileOutputStream(nnFile).use { out ->
                     nnImage.compress(CompressFormat.PNG, 100, out)
                 }
-                android.util.Log.d("SensorDataLogger", "Neural network path saved successfully")
-            } ?: run {
-                android.util.Log.d("SensorDataLogger", "No neural network path to save")
             }
 
-            android.util.Log.d("SensorDataLogger", "All files saved successfully")
             true
         } catch (e: Exception) {
-            android.util.Log.e("SensorDataLogger", "Error saving files", e)
-            e.printStackTrace()
             false
         }
     }
@@ -232,10 +219,6 @@ class SensorDataLogger {
         width: Int = 400,
         height: Int = 400
     ): Bitmap {
-        android.util.Log.d("SensorDataLogger", "Generating path bitmap with ${pathHistory.size} points")
-        if (pathHistory.isNotEmpty()) {
-            android.util.Log.d("SensorDataLogger", "Path bounds: x=[${pathHistory.minOf { it.x }}, ${pathHistory.maxOf { it.x }}], y=[${pathHistory.minOf { it.y }}, ${pathHistory.maxOf { it.y }}]")
-        }
         
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -279,9 +262,6 @@ class SensorDataLogger {
             val pathWidth = maxXPath - minX
             val pathHeight = maxYPath - minY
             
-            android.util.Log.d("SensorDataLogger", "Path dimensions: ${pathWidth}x${pathHeight}")
-            
-            // Use path bounds if they're reasonable, otherwise use area bounds
             val effectiveMaxX = if (pathWidth > 0.1f) maxXPath else maxX
             val effectiveMaxY = if (pathHeight > 0.1f) maxYPath else maxY
             val effectiveMinX = if (pathWidth > 0.1f) minX else 0f
@@ -291,19 +271,15 @@ class SensorDataLogger {
                 val prev = pathHistory[i-1]
                 val curr = pathHistory[i]
                 
-                // Normalize coordinates to [0, 1] range
                 val prevNormX = (prev.x - effectiveMinX) / (effectiveMaxX - effectiveMinX).coerceAtLeast(0.001f)
                 val prevNormY = (prev.y - effectiveMinY) / (effectiveMaxY - effectiveMinY).coerceAtLeast(0.001f)
                 val currNormX = (curr.x - effectiveMinX) / (effectiveMaxX - effectiveMinX).coerceAtLeast(0.001f)
                 val currNormY = (curr.y - effectiveMinY) / (effectiveMaxY - effectiveMinY).coerceAtLeast(0.001f)
                 
-                // Map to canvas coordinates
                 val prevX = startX + prevNormX * gridWidth
                 val prevY = startY + prevNormY * gridHeight
                 val currX = startX + currNormX * gridWidth
                 val currY = startY + currNormY * gridHeight
-                
-                android.util.Log.d("SensorDataLogger", "Drawing line: (${prev.x}, ${prev.y}) -> (${curr.x}, ${curr.y}) -> (${prevX}, ${prevY}) -> (${currX}, ${currY})")
                 
                 canvas.drawLine(prevX, prevY, currX, currY, paint)
             }
@@ -389,20 +365,9 @@ class SensorDataLogger {
         )
     }
 
-    /**
-     * Get calibration data from the first part of the tracking session.
-     * This data should be from when the device was stationary.
-     * 
-     * @return RawSensorData for calibration, or null if insufficient data
-     */
     fun getCalibrationData(maxSamples: Int = 200): RawSensorData? {
         val sampleCount = minOf(maxSamples, timestamps.size)
-        if (sampleCount < 50) {
-            android.util.Log.d("SensorDataLogger", "Insufficient data for calibration: $sampleCount samples")
-            return null
-        }
-        
-        android.util.Log.d("SensorDataLogger", "Creating calibration data with $sampleCount samples")
+        if (sampleCount < 50) return null
         
         return RawSensorData(
             timestamps = timestamps.take(sampleCount).toLongArray(),

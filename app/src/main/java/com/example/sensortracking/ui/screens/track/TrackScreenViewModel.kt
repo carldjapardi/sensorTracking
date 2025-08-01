@@ -161,18 +161,11 @@ class TrackScreenViewModel : ViewModel() {
     }
     
     fun saveTracking(context: Context, sessionName: String, runNeural: Boolean): Boolean {
-        android.util.Log.d("TrackScreenViewModel", "Saving tracking session: $sessionName, runNeural: $runNeural")
-        
         val sensorDataLogger = pdrSensorManager?.getSensorDataLogger()
-        if (sensorDataLogger == null) {
-            android.util.Log.e("TrackScreenViewModel", "SensorDataLogger is null")
-            return false
-        }
+        if (sensorDataLogger == null) return false
         
         val pathHistory = getPathHistory()
         val pathSegments = getPathSegments()
-        
-        android.util.Log.d("TrackScreenViewModel", "Path history size: ${pathHistory.size}, Path segments: ${pathSegments.size}")
         
         val session = sensorDataLogger.getCurrentSession(
             sessionName = sessionName,
@@ -184,19 +177,16 @@ class TrackScreenViewModel : ViewModel() {
         )
 
         val nnPath = if (runNeural) {
-            android.util.Log.d("TrackScreenViewModel", "Starting neural network processing")
             try {
                 val modelAssetPath = "path_model.onnx"
                 val assetManager = context.assets
                 val modelExists = try {
                     assetManager.open(modelAssetPath).use { true }
                 } catch (e: Exception) {
-                    android.util.Log.e("TrackScreenViewModel", "Model file not found: $modelAssetPath")
                     false
                 }
                 
                 if (!modelExists) {
-                    android.util.Log.e("TrackScreenViewModel", "Neural network model not found")
                     _uiState.update { it.copy(
                         isError = true,
                         errorMessage = "Neural network model not found. Please ensure 'path_model.onnx' is in the assets folder."
@@ -204,24 +194,16 @@ class TrackScreenViewModel : ViewModel() {
                     return false
                 }
                 
-                android.util.Log.d("TrackScreenViewModel", "Model file found, creating NeuralPathProcessor")
                 val processor = NeuralPathProcessor(context, modelAssetPath)
                 
-                // Try to calibrate if we have enough stationary data
                 val calibrationData = sensorDataLogger.getCalibrationData()
                 if (calibrationData != null) {
-                    android.util.Log.d("TrackScreenViewModel", "Attempting calibration with ${calibrationData.accelerometerSampleCount} samples")
-                    val calibrationSuccess = processor.calibrate(calibrationData, minSamples = 50) // Reduced from 100 to 50
-                    android.util.Log.d("TrackScreenViewModel", "Calibration result: $calibrationSuccess")
-                } else {
-                    android.util.Log.d("TrackScreenViewModel", "No calibration data available, using auto-calibration")
+                    processor.calibrate(calibrationData, minSamples = 50)
                 }
                 
-                val result = processor.predictPath(session.rawSensorData)
-                android.util.Log.d("TrackScreenViewModel", "Neural network processing completed, generated ${result.size} path points")
-                result
+                val initialPosition = _uiState.value.currentPosition
+                processor.predictPath(session.rawSensorData, initialPosition)
             } catch (e: Exception) {
-                android.util.Log.e("TrackScreenViewModel", "Neural network processing failed", e)
                 _uiState.update { it.copy(
                     isError = true,
                     errorMessage = "Neural network processing failed: ${e.message}"
@@ -229,14 +211,10 @@ class TrackScreenViewModel : ViewModel() {
                 null
             }
         } else {
-            android.util.Log.d("TrackScreenViewModel", "Neural network processing skipped")
             null
         }
 
-        android.util.Log.d("TrackScreenViewModel", "Calling saveToFile with nnPath size: ${nnPath?.size ?: 0}")
-        val saveResult = sensorDataLogger.saveToFile(context, sessionName, session, nnPath)
-        android.util.Log.d("TrackScreenViewModel", "Save result: $saveResult")
-        return saveResult
+        return sensorDataLogger.saveToFile(context, sessionName, session, nnPath)
     }
     
     fun updatePDRConfig(newConfig: PDRConfig) {

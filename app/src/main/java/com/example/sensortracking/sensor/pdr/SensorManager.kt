@@ -16,12 +16,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/**
- * Manages Android sensors and feeds data to PDR processor
- */
 class PDRSensorManager(private val context: Context, private val pdrProcessor: PDRProcessor) : SensorEventListener {
     private val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    // Primary sensors used for PDR. Gyroscope is logged for neural processing
     private var accelerometer: FloatArray = FloatArray(3)
     private var rotationVector: FloatArray = FloatArray(4)
     private var gyroscope: FloatArray = FloatArray(3)
@@ -66,9 +62,8 @@ class PDRSensorManager(private val context: Context, private val pdrProcessor: P
         when (event.sensor.type) {
             Sensor.TYPE_ACCELEROMETER -> {
                 System.arraycopy(event.values, 0, accelerometer, 0, 3)
-                // Log raw accelerometer data
                 sensorDataLogger.logSensorData(
-                    event.timestamp / 1000000, // Convert nanoseconds to milliseconds
+                    event.timestamp / 1000000,
                     SensorType.ACCELEROMETER,
                     event.values,
                     event.accuracy
@@ -87,9 +82,8 @@ class PDRSensorManager(private val context: Context, private val pdrProcessor: P
             Sensor.TYPE_ROTATION_VECTOR -> {
                 System.arraycopy(event.values, 0, rotationVector, 0, 4)
                 pdrProcessor.updateRotationVector(rotationVector)
-                // Log raw rotation vector data
                 sensorDataLogger.logSensorData(
-                    event.timestamp / 1000000, // Convert nanoseconds to milliseconds
+                    event.timestamp / 1000000,
                     SensorType.ROTATION_VECTOR,
                     event.values,
                     event.accuracy
@@ -106,7 +100,6 @@ class PDRSensorManager(private val context: Context, private val pdrProcessor: P
         )
         _pdrData.value = pdrResult
         
-        // Log processed PDR data
         sensorDataLogger.logPDRData(
             com.example.sensortracking.data.PDRDataPoint(
                 timestamp = timestamp,

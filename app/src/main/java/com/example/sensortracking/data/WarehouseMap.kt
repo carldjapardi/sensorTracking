@@ -8,11 +8,11 @@ data class WarehouseCell(
 )
 
 enum class CellType {
-    STORAGE,      // Non-walkable Storage location (B02, C80, etc.)
-    AISLE,        // Walkable aisle space
-    WALL,         // Non-walkable wall/obstacle
-    START,        // Starting point
-    END           // Ending point
+    STORAGE,
+    AISLE,
+    WALL,
+    START,
+    END
 }
 
 data class WarehouseMap(

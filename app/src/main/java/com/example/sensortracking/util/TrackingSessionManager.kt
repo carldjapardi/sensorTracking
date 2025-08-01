@@ -86,6 +86,7 @@ class TrackingSessionManager(private val context: Context) {
             val trackingDir = File(context.filesDir, "tracking_sessions")
             val file = File(trackingDir, fileName)
             val image = File(trackingDir, file.nameWithoutExtension + ".png")
+            val neuralImage = File(trackingDir, file.nameWithoutExtension + "_nn.png")
 
             var success = true
             if (file.exists()) {
@@ -96,6 +97,10 @@ class TrackingSessionManager(private val context: Context) {
 
             if (image.exists()) {
                 image.delete()
+            }
+
+            if (neuralImage.exists()) {
+                neuralImage.delete()
             }
 
             success
