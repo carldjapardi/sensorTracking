@@ -14,7 +14,10 @@ recorded IMU data. Place a compatible model (for example, a RONIN pre-trained
 model converted to ONNX) in `app/src/main/assets/path_model.onnx`. Pre-trained
 RONIN weights are available from the [RoNIN project website](https://ronin.cs.sfu.ca/).
 The processor converts accelerometer, gyroscope and rotation vector samples to
-world coordinates before feeding them to the network.
+world coordinates before feeding them to the network. Biases are estimated
+automatically, and optional sensor scale factors can be provided via
+`NeuralPathProcessor.setScaleFactors()` if your device requires additional
+calibration.
 
 
 ## Converting the provided weights
