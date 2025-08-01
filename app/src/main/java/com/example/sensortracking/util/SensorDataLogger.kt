@@ -42,7 +42,7 @@ class SensorDataLogger {
     
     private var sessionStartTime: Long = 0
     private var lastLogTime: Long = 0
-    private val samplingInterval = 100L
+    private val samplingInterval = 20L // 50 Hz sampling rate (20ms interval)
     
     private val _isLogging = MutableStateFlow(false)
     val isLogging: StateFlow<Boolean> = _isLogging.asStateFlow()
@@ -127,11 +127,14 @@ class SensorDataLogger {
         session: TrackingSession,
         neuralPath: List<Position>? = null
     ): Boolean {
+        android.util.Log.d("SensorDataLogger", "Saving to file: $sessionName, neuralPath size: ${neuralPath?.size ?: 0}")
+        
         return try {
             val filesDir = context.filesDir
             val trackingDir = File(filesDir, "tracking_sessions")
             if (!trackingDir.exists()) {
                 trackingDir.mkdirs()
+                android.util.Log.d("SensorDataLogger", "Created tracking directory: ${trackingDir.absolutePath}")
             }
 
             val csvFile = File(trackingDir, "$sessionName.csv")
@@ -181,6 +184,7 @@ class SensorDataLogger {
             }
 
             val imageFile = File(trackingDir, "$sessionName.png")
+            android.util.Log.d("SensorDataLogger", "Saving original PDR path to: ${imageFile.absolutePath}")
             val bitmap = generatePathBitmap(session.pathHistory, session.metadata.area, session.metadata.warehouseMap)
             FileOutputStream(imageFile).use { out ->
                 bitmap.compress(CompressFormat.PNG, 100, out)
@@ -189,13 +193,19 @@ class SensorDataLogger {
             neuralPath?.let { path ->
                 val nnImage = generatePathBitmap(path, session.metadata.area, session.metadata.warehouseMap)
                 val nnFile = File(trackingDir, "${sessionName}_nn.png")
+                android.util.Log.d("SensorDataLogger", "Saving neural network path to: ${nnFile.absolutePath}")
                 FileOutputStream(nnFile).use { out ->
                     nnImage.compress(CompressFormat.PNG, 100, out)
                 }
+                android.util.Log.d("SensorDataLogger", "Neural network path saved successfully")
+            } ?: run {
+                android.util.Log.d("SensorDataLogger", "No neural network path to save")
             }
 
+            android.util.Log.d("SensorDataLogger", "All files saved successfully")
             true
         } catch (e: Exception) {
+            android.util.Log.e("SensorDataLogger", "Error saving files", e)
             e.printStackTrace()
             false
         }
@@ -208,18 +218,29 @@ class SensorDataLogger {
         width: Int = 400,
         height: Int = 400
     ): Bitmap {
+        android.util.Log.d("SensorDataLogger", "Generating path bitmap with ${pathHistory.size} points")
+        if (pathHistory.isNotEmpty()) {
+            android.util.Log.d("SensorDataLogger", "Path bounds: x=[${pathHistory.minOf { it.x }}, ${pathHistory.maxOf { it.x }}], y=[${pathHistory.minOf { it.y }}, ${pathHistory.maxOf { it.y }}]")
+        }
+        
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         canvas.drawColor(Color.WHITE)
+        
         val horizontalBoxes = warehouseMap?.width ?: area.length.toInt().coerceAtLeast(1)
         val verticalBoxes = warehouseMap?.height ?: area.width.toInt().coerceAtLeast(1)
         val maxX = warehouseMap?.width?.toFloat() ?: area.length
         val maxY = warehouseMap?.height?.toFloat() ?: area.width
+        
+        android.util.Log.d("SensorDataLogger", "Area dimensions: ${maxX}x${maxY}, Grid: ${horizontalBoxes}x${verticalBoxes}")
+        
         val cellSize = kotlin.math.min(width.toFloat() / horizontalBoxes, height.toFloat() / verticalBoxes)
         val gridWidth = cellSize * horizontalBoxes
         val gridHeight = cellSize * verticalBoxes
         val startX = (width - gridWidth) / 2f
         val startY = (height - gridHeight) / 2f
+        
+        // Draw grid
         val paint = Paint().apply { color = Color.BLACK; style = Paint.Style.STROKE }
         for (i in 0..horizontalBoxes) {
             val x = startX + i * cellSize
@@ -229,17 +250,71 @@ class SensorDataLogger {
             val y = startY + j * cellSize
             canvas.drawLine(startX, y, startX + gridWidth, y, paint)
         }
-        paint.color = Color.BLUE
-        paint.strokeWidth = 3f
-        for (i in 1 until pathHistory.size) {
-            val prev = pathHistory[i-1]
-            val curr = pathHistory[i]
-            val prevX = startX + (prev.x / maxX) * gridWidth
-            val prevY = startY + (prev.y / maxY) * gridHeight
-            val currX = startX + (curr.x / maxX) * gridWidth
-            val currY = startY + (curr.y / maxY) * gridHeight
-            canvas.drawLine(prevX, prevY, currX, currY, paint)
+        
+        // Draw path
+        if (pathHistory.size > 1) {
+            paint.color = Color.BLUE
+            paint.strokeWidth = 3f
+            
+            // Calculate path bounds for better scaling
+            val minX = pathHistory.minOf { it.x }
+            val maxXPath = pathHistory.maxOf { it.x }
+            val minY = pathHistory.minOf { it.y }
+            val maxYPath = pathHistory.maxOf { it.y }
+            
+            val pathWidth = maxXPath - minX
+            val pathHeight = maxYPath - minY
+            
+            android.util.Log.d("SensorDataLogger", "Path dimensions: ${pathWidth}x${pathHeight}")
+            
+            // Use path bounds if they're reasonable, otherwise use area bounds
+            val effectiveMaxX = if (pathWidth > 0.1f) maxXPath else maxX
+            val effectiveMaxY = if (pathHeight > 0.1f) maxYPath else maxY
+            val effectiveMinX = if (pathWidth > 0.1f) minX else 0f
+            val effectiveMinY = if (pathHeight > 0.1f) minY else 0f
+            
+            for (i in 1 until pathHistory.size) {
+                val prev = pathHistory[i-1]
+                val curr = pathHistory[i]
+                
+                // Normalize coordinates to [0, 1] range
+                val prevNormX = (prev.x - effectiveMinX) / (effectiveMaxX - effectiveMinX).coerceAtLeast(0.001f)
+                val prevNormY = (prev.y - effectiveMinY) / (effectiveMaxY - effectiveMinY).coerceAtLeast(0.001f)
+                val currNormX = (curr.x - effectiveMinX) / (effectiveMaxX - effectiveMinX).coerceAtLeast(0.001f)
+                val currNormY = (curr.y - effectiveMinY) / (effectiveMaxY - effectiveMinY).coerceAtLeast(0.001f)
+                
+                // Map to canvas coordinates
+                val prevX = startX + prevNormX * gridWidth
+                val prevY = startY + prevNormY * gridHeight
+                val currX = startX + currNormX * gridWidth
+                val currY = startY + currNormY * gridHeight
+                
+                android.util.Log.d("SensorDataLogger", "Drawing line: (${prev.x}, ${prev.y}) -> (${curr.x}, ${curr.y}) -> (${prevX}, ${prevY}) -> (${currX}, ${currY})")
+                
+                canvas.drawLine(prevX, prevY, currX, currY, paint)
+            }
+            
+            // Draw start and end points
+            paint.color = Color.GREEN
+            paint.strokeWidth = 8f
+            val startPoint = pathHistory.first()
+            val endPoint = pathHistory.last()
+            
+            val startNormX = (startPoint.x - effectiveMinX) / (effectiveMaxX - effectiveMinX).coerceAtLeast(0.001f)
+            val startNormY = (startPoint.y - effectiveMinY) / (effectiveMaxY - effectiveMinY).coerceAtLeast(0.001f)
+            val endNormX = (endPoint.x - effectiveMinX) / (effectiveMaxX - effectiveMinX).coerceAtLeast(0.001f)
+            val endNormY = (endPoint.y - effectiveMinY) / (effectiveMaxY - effectiveMinY).coerceAtLeast(0.001f)
+            
+            val startCanvasX = startX + startNormX * gridWidth
+            val startCanvasY = startY + startNormY * gridHeight
+            val endCanvasX = startX + endNormX * gridWidth
+            val endCanvasY = startY + endNormY * gridHeight
+            
+            canvas.drawPoint(startCanvasX, startCanvasY, paint)
+            paint.color = Color.RED
+            canvas.drawPoint(endCanvasX, endCanvasY, paint)
         }
+        
         return bitmap
     }
 
@@ -297,6 +372,32 @@ class SensorDataLogger {
             pdrData = pdrDataSeries,
             pathHistory = pathHistory,
             pathSegments = pathSegments
+        )
+    }
+
+    /**
+     * Get calibration data from the first part of the tracking session.
+     * This data should be from when the device was stationary.
+     * 
+     * @return RawSensorData for calibration, or null if insufficient data
+     */
+    fun getCalibrationData(maxSamples: Int = 200): RawSensorData? {
+        val sampleCount = minOf(maxSamples, timestamps.size)
+        if (sampleCount < 50) {
+            android.util.Log.d("SensorDataLogger", "Insufficient data for calibration: $sampleCount samples")
+            return null
+        }
+        
+        android.util.Log.d("SensorDataLogger", "Creating calibration data with $sampleCount samples")
+        
+        return RawSensorData(
+            timestamps = timestamps.take(sampleCount).toLongArray(),
+            accelerometerData = accelerometerData.take(sampleCount * 3).toFloatArray(),
+            rotationVectorData = rotationVectorData.take(sampleCount * 4).toFloatArray(),
+            gyroscopeData = gyroscopeData.take(sampleCount * 3).toFloatArray(),
+            accelerometerAccuracy = accelerometerAccuracy.take(sampleCount).toIntArray(),
+            rotationVectorAccuracy = rotationVectorAccuracy.take(sampleCount).toIntArray(),
+            gyroscopeAccuracy = gyroscopeAccuracy.take(sampleCount).toIntArray()
         )
     }
 } 

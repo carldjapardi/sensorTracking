@@ -35,6 +35,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -78,6 +79,11 @@ fun TrackScreen(
     var showEditSegmentDialog by remember { mutableStateOf<PathSegment?>(null) }
     var lastDialogTrigger by remember { mutableStateOf(-1) }
     
+    // Calibration state
+    var isCalibrating by remember { mutableStateOf(false) }
+    var calibrationTimeLeft by remember { mutableStateOf(10) }
+    var hasUserInitiatedCalibration by remember { mutableStateOf(false) }
+    
     var tempLength by remember { mutableStateOf(uiState.area.length.toInt().toString()) }
     var tempWidth by remember { mutableStateOf(uiState.area.width.toInt().toString()) }
     
@@ -91,6 +97,27 @@ fun TrackScreen(
         if (uiState.isError && uiState.errorMessage != null) {
             snackbarHostState.showSnackbar(uiState.errorMessage!!)
             viewModel.clearError()
+        }
+    }
+
+    // Calibration countdown timer
+    LaunchedEffect(isCalibrating) {
+        if (isCalibrating) {
+            while (calibrationTimeLeft > 0) {
+                kotlinx.coroutines.delay(1000)
+                calibrationTimeLeft--
+            }
+            isCalibrating = false
+            calibrationTimeLeft = 10
+        }
+    }
+
+    // Start tracking after calibration is complete
+    LaunchedEffect(isCalibrating) {
+        if (!isCalibrating && calibrationTimeLeft == 10 && uiState.canStartTracking && hasUserInitiatedCalibration) {
+            // Small delay to ensure calibration dialog is dismissed
+            kotlinx.coroutines.delay(500)
+            viewModel.onStartTracking()
         }
     }
 
@@ -155,6 +182,7 @@ fun TrackScreen(
             onDismiss = { showNewTrackingDialog = false },
             onNewTracking = {
                 viewModel.onStartNewTracking()
+                hasUserInitiatedCalibration = false
                 showStartDialog = true
                 showNewTrackingDialog = false
             }
@@ -166,6 +194,26 @@ fun TrackScreen(
             viewModel = viewModel,
             navController = navController,
             onDismiss = { showSaveTrackingDialog = false })
+    }
+
+    // Calibration dialog
+    if (isCalibrating) {
+        AlertDialog(
+            onDismissRequest = { }, // Prevent dismissal during calibration
+            title = { Text("Calibrating Sensors") },
+            text = {
+                Column {
+                    Text("Please keep your device stationary for accurate calibration.")
+                    Spacer(Modifier.height(16.dp))
+                    Text("Time remaining: $calibrationTimeLeft seconds", 
+                         style = MaterialTheme.typography.headlineMedium)
+                    Spacer(Modifier.height(8.dp))
+                    Text("This ensures the neural network will work properly.")
+                }
+            },
+            confirmButton = {},
+            dismissButton = {}
+        )
     }
     
     if (showEditSegmentDialog != null) {
@@ -272,8 +320,18 @@ fun TrackScreen(
                         Text("Stop Tracking")
                     }
                 } else {
-                    Button(onClick = viewModel::onStartTracking, enabled = uiState.canStartTracking, modifier = Modifier.width(140.dp).height(50.dp)) {
-                        Text("Start Tracking")
+                    Button(
+                        onClick = { 
+                            if (!isCalibrating) {
+                                hasUserInitiatedCalibration = true
+                                isCalibrating = true
+                                calibrationTimeLeft = 10
+                            }
+                        }, 
+                        enabled = uiState.canStartTracking && !isCalibrating, 
+                        modifier = Modifier.width(140.dp).height(50.dp)
+                    ) {
+                        Text(if (isCalibrating) "Calibrating..." else "Start Tracking")
                     }
                 }
                 Button(

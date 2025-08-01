@@ -154,10 +154,18 @@ fun TrackingSessionCard(
 ) {
     val context = LocalContext.current
     val sessionManager = remember { TrackingSessionManager(context) }
-    val imageBitmap = remember(session.imageFileName) {
+    
+    // Load both original and neural network images
+    val originalImageBitmap = remember(session.imageFileName) {
         val dir = File(context.filesDir, "tracking_sessions")
         val img = File(dir, session.imageFileName ?: "")
         if (img.exists()) BitmapFactory.decodeFile(img.absolutePath)?.asImageBitmap() else null
+    }
+    
+    val neuralImageBitmap = remember(session.imageFileName) {
+        val dir = File(context.filesDir, "tracking_sessions")
+        val neuralImg = File(dir, session.imageFileName?.replace(".png", "_nn.png") ?: "")
+        if (neuralImg.exists()) BitmapFactory.decodeFile(neuralImg.absolutePath)?.asImageBitmap() else null
     }
 
     Card(
@@ -167,10 +175,76 @@ fun TrackingSessionCard(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            imageBitmap?.let {
-                Image(bitmap = it, contentDescription = null, modifier = Modifier.fillMaxWidth().height(150.dp))
-                Spacer(Modifier.height(8.dp))
+            // Display images side by side
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Original PDR Path
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "PDR Path",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    originalImageBitmap?.let {
+                        Image(
+                            bitmap = it, 
+                            contentDescription = "Original PDR Path", 
+                            modifier = Modifier.fillMaxWidth().height(120.dp)
+                        )
+                    } ?: run {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(120.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No PDR path",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                
+                // Neural Network Path
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "Neural Network Path",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    neuralImageBitmap?.let {
+                        Image(
+                            bitmap = it, 
+                            contentDescription = "Neural Network Path", 
+                            modifier = Modifier.fillMaxWidth().height(120.dp)
+                        )
+                    } ?: run {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(120.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No neural path",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             }
+            
+            Spacer(Modifier.height(8.dp))
+            
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
