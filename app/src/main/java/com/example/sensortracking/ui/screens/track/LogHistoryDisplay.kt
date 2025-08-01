@@ -87,9 +87,15 @@ fun LogEntry(
         }
     }
     
+    val isClickable = segment is PathSegment.Straight
+    
     Text(
         text = text,
-        modifier = Modifier.fillMaxWidth().clickable { onEdit(segment) }.padding(vertical = 2.dp),
+        modifier = if (isClickable) {
+            Modifier.fillMaxWidth().clickable { onEdit(segment) }.padding(vertical = 2.dp)
+        } else {
+            Modifier.fillMaxWidth().padding(vertical = 2.dp)
+        },
         style = MaterialTheme.typography.bodyMedium
     )
 }
