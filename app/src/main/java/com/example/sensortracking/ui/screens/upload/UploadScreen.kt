@@ -12,15 +12,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,7 +36,7 @@ import com.example.sensortracking.ui.screens.upload.uploadScreenDialog.FloorPlan
 import com.example.sensortracking.ui.screens.upload.uploadScreenDialog.CustomFloorPlanDialog
 import com.example.sensortracking.ui.screens.upload.uploadScreenDialog.SaveFloorPlanDialog
 import com.example.sensortracking.util.UploadedFloorPlanManager
-import com.example.sensortracking.ui.screens.upload.UploadedFloorPlanCard
+import com.example.sensortracking.ui.screens.CustomTopAppBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,14 +69,7 @@ fun UploadScreen(
     
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Floor Plans") },
-                actions = {
-                    IconButton(onClick = { /* TODO: More options */ }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More options")
-                    }
-                }
-            )
+            CustomTopAppBar(title = "Floor Plans")
         }
     ) { innerPadding ->
         LazyColumn(
@@ -257,4 +247,3 @@ fun FloorPlanCard(
         }
     }
 }
-

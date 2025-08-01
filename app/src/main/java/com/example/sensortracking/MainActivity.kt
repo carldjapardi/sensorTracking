@@ -11,6 +11,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.sensortracking.ui.theme.SensorTrackingTheme
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,6 +26,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sensortracking.ui.AppViewModel
 import com.example.sensortracking.ui.NavigationEvent
 import com.example.sensortracking.data.WarehouseMap
+import com.example.sensortracking.util.SettingsManager
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,6 +43,8 @@ class MainActivity : ComponentActivity() {
                 val appViewModel: AppViewModel = viewModel()
                 val navigationEvent by appViewModel.navigationEvent.collectAsState()
                 val isOnTrackScreen = currentRoute == "track"
+                
+                val settingsManager = remember { SettingsManager(this) }
 
                 Scaffold(
                     bottomBar = {
@@ -86,15 +90,15 @@ class MainActivity : ComponentActivity() {
                     }
                     NavHost(
                         navController = navController,
-                        startDestination = "home",
-                        modifier = Modifier.padding(innerPadding)
+                        startDestination = "home"
                     ) {
                         composable("home") { HomeScreen(navController) }
                         composable("track") { 
                             TrackScreen(
                                 navController = navController,
                                 showStartDialogOnNav = trackTabTrigger,
-                                selectedFloorPlan = selectedFloorPlan
+                                selectedFloorPlan = selectedFloorPlan,
+                                settingsManager = settingsManager
                             ) 
                         }
                         composable("upload") { 
@@ -105,7 +109,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             ) 
                         }
-                        composable("settings") { SettingsScreen(navController) }
+                        composable("settings") { SettingsScreen(navController, settingsManager) }
                     }
                 }
             }

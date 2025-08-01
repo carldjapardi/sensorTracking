@@ -8,7 +8,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.foundation.Image
 import android.graphics.BitmapFactory
@@ -49,9 +48,7 @@ fun HomeScreen(
     
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Tracking Sessions") }
-            )
+            CustomTopAppBar(title = "Tracking Sessions")
         }
     ) { innerPadding ->
         if (uiState.isLoading) {

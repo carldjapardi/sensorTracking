@@ -69,24 +69,33 @@ fun GridFloorPlanArea(
             val offsetX = centerX - (startX + userX)
             val offsetY = centerY - (startY + userY)
 
+            val clampedOffsetX = offsetX.coerceIn(
+                -startX,
+                size.width - (startX + gridWidth)
+            )
+            val clampedOffsetY = offsetY.coerceIn(
+                -startY,
+                size.height - (startY + gridHeight)
+            )
+
             if (warehouseMap != null) {
-                drawWarehouseMap(warehouseMap, startX + offsetX, startY + offsetY, cellSize)
+                drawWarehouseMap(warehouseMap, startX + clampedOffsetX, startY + clampedOffsetY, cellSize)
             } else {
                 for (i in 0..horizontalBoxes) {
-                    val x = startX + offsetX + i * cellSize
+                    val x = startX + clampedOffsetX + i * cellSize
                     drawLine(
                         color = Color.Black,
-                        start = Offset(x, startY + offsetY),
-                        end = Offset(x, startY + offsetY + gridHeight),
+                        start = Offset(x, startY + clampedOffsetY),
+                        end = Offset(x, startY + clampedOffsetY + gridHeight),
                         strokeWidth = 2f
                     )
                 }
                 for (j in 0..verticalBoxes) {
-                    val y = startY + offsetY + j * cellSize
+                    val y = startY + clampedOffsetY + j * cellSize
                     drawLine(
                         color = Color.Black,
-                        start = Offset(startX + offsetX, y),
-                        end = Offset(startX + offsetX + gridWidth, y),
+                        start = Offset(startX + clampedOffsetX, y),
+                        end = Offset(startX + clampedOffsetX + gridWidth, y),
                         strokeWidth = 2f
                     )
                 }
@@ -97,10 +106,10 @@ fun GridFloorPlanArea(
                     val prev = pathHistory[i - 1]
                     val curr = pathHistory[i]
 
-                    val prevX = startX + offsetX + (prev.x / maxX) * gridWidth
-                    val prevY = startY + offsetY + (prev.y / maxY) * gridHeight
-                    val currX = startX + offsetX + (curr.x / maxX) * gridWidth
-                    val currY = startY + offsetY + (curr.y / maxY) * gridHeight
+                    val prevX = startX + clampedOffsetX + (prev.x / maxX) * gridWidth
+                    val prevY = startY + clampedOffsetY + (prev.y / maxY) * gridHeight
+                    val currX = startX + clampedOffsetX + (curr.x / maxX) * gridWidth
+                    val currY = startY + clampedOffsetY + (curr.y / maxY) * gridHeight
 
                     drawLine(
                         color = Color.Blue,
@@ -111,8 +120,8 @@ fun GridFloorPlanArea(
                 }
             }
 
-            val posX = startX + offsetX + (userPosition.x / maxX) * gridWidth
-            val posY = startY + offsetY + (userPosition.y / maxY) * gridHeight
+            val posX = startX + clampedOffsetX + (userPosition.x / maxX) * gridWidth
+            val posY = startY + clampedOffsetY + (userPosition.y / maxY) * gridHeight
 
             drawTriangleArrow(
                 center = Offset(posX, posY),

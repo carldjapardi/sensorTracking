@@ -1,12 +1,20 @@
 package com.example.sensortracking.ui.screens
 
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.navigation.NavController
-import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 
 @Composable
 fun BottomNavigationBar(
@@ -15,7 +23,9 @@ fun BottomNavigationBar(
     onTrackTabTapped: () -> Unit = {},
     onTabSelected: (String) -> Unit = {}
 ) {
-    NavigationBar {
+    NavigationBar(
+        modifier = Modifier.height(130.dp).fillMaxHeight()
+    ) {
         NavigationBarItem(
             icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
             label = { Text("Home") },
@@ -56,4 +66,4 @@ fun BottomNavigationBar(
             }
         )
     }
-} 
+}

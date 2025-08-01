@@ -20,7 +20,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
@@ -34,8 +33,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.AlertDialog
+import com.example.sensortracking.ui.screens.CustomTopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -56,6 +55,7 @@ import androidx.navigation.NavController
 import com.example.sensortracking.ui.screens.track.trackScreenDialog.*
 import kotlin.math.max
 import kotlin.math.min
+import com.example.sensortracking.util.SettingsManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,12 +63,15 @@ fun TrackScreen(
     navController: NavController? = null,
     viewModel: TrackScreenViewModel = viewModel(),
     showStartDialogOnNav: Int = 0,
-    selectedFloorPlan: com.example.sensortracking.data.WarehouseMap? = null
+    selectedFloorPlan: com.example.sensortracking.data.WarehouseMap? = null,
+    settingsManager: SettingsManager
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scrollState = rememberScrollState()
+    
+    val neuralNetworkCalibration by settingsManager.neuralNetworkCalibration.collectAsState()
 
     var showCalibrateDialog by remember { mutableStateOf(false) }
     var showNewTrackingDialog by remember { mutableStateOf(false) }
@@ -100,7 +103,6 @@ fun TrackScreen(
         }
     }
 
-    // Calibration countdown timer
     LaunchedEffect(isCalibrating) {
         if (isCalibrating) {
             while (calibrationTimeLeft > 0) {
@@ -112,7 +114,6 @@ fun TrackScreen(
         }
     }
 
-    // Start tracking after calibration is complete
     LaunchedEffect(isCalibrating) {
         if (!isCalibrating && calibrationTimeLeft == 10 && uiState.canStartTracking && hasUserInitiatedCalibration) {
             // Small delay to ensure calibration dialog is dismissed
@@ -237,14 +238,7 @@ fun TrackScreen(
     // MAIN UI
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Tracking") },
-                actions = {
-                    IconButton(onClick = { /* TODO: More options */ }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More options")
-                    }
-                }
-            )
+            CustomTopAppBar(title = "Tracking")
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
@@ -316,16 +310,20 @@ fun TrackScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 if (!uiState.canStartTracking) {
-                    Button(onClick = viewModel::onStopTracking, modifier = Modifier.width(140.dp).height(50.dp)) {
+                    Button(onClick = { viewModel.onStopTracking() }, modifier = Modifier.width(140.dp).height(50.dp)) {
                         Text("Stop Tracking")
                     }
                 } else {
                     Button(
                         onClick = { 
                             if (!isCalibrating) {
-                                hasUserInitiatedCalibration = true
-                                isCalibrating = true
-                                calibrationTimeLeft = 10
+                                if (neuralNetworkCalibration) {
+                                    hasUserInitiatedCalibration = true
+                                    isCalibrating = true
+                                    calibrationTimeLeft = 10
+                                } else {
+                                    viewModel.onStartTracking()
+                                }
                             }
                         }, 
                         enabled = uiState.canStartTracking && !isCalibrating, 

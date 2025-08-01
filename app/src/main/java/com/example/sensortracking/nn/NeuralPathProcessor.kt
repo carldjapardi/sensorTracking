@@ -49,13 +49,6 @@ class NeuralPathProcessor(context: Context, modelAssetPath: String) {
         return false
     }
 
-    fun setScaleFactors(accel: FloatArray, gyro: FloatArray) {
-        if (accel.size >= 3 && gyro.size >= 3) {
-            accelScale = accel.copyOf(3)
-            gyroScale = gyro.copyOf(3)
-        }
-    }
-
     fun predictPath(rawData: RawSensorData, initialPosition: Position = Position(0f, 0f)): List<Position> {
         val n = minOf(rawData.timestamps.size, rawData.accelerometerData.size / 3, rawData.gyroscopeData.size / 3)
         
@@ -187,7 +180,7 @@ class NeuralPathProcessor(context: Context, modelAssetPath: String) {
     }
 
     private fun calculateGyroBias(rawData: RawSensorData, samples: Int): FloatArray {
-        val bias = FloatArray(3) { 0f }
+        val bias = FloatArray(3)
         for (i in 0 until samples) {
             if (i < rawData.gyroscopeSampleCount) {
                 val gyro = rawData.getGyroscopeSample(i)
@@ -200,7 +193,7 @@ class NeuralPathProcessor(context: Context, modelAssetPath: String) {
     }
 
     private fun calculateAccelBias(rawData: RawSensorData, samples: Int): FloatArray {
-        val bias = FloatArray(3) { 0f }
+        val bias = FloatArray(3)
         val count = minOf(samples, rawData.accelerometerData.size / 3)
         
         for (i in 0 until count) {
@@ -210,11 +203,7 @@ class NeuralPathProcessor(context: Context, modelAssetPath: String) {
             bias[2] += rawData.accelerometerData[idx + 2]
         }
         
-        bias[0] /= count
-        bias[1] /= count
-        bias[2] /= count
-        
-        return bias
+        return floatArrayOf(bias[0] / count, bias[1] / count, bias[2] / count)
     }
     
     private fun rotationVectorToMatrix(rv: FloatArray): FloatArray {
