@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.asStateFlow
 sealed class NavigationEvent {
     data object None : NavigationEvent()
     data class NavigateTo(val route: String) : NavigationEvent()
-    data class ConfirmLeaveTrack(val route: String) : NavigationEvent()
 }
 
 class AppViewModel : ViewModel() {
@@ -16,18 +15,10 @@ class AppViewModel : ViewModel() {
     val navigationEvent: StateFlow<NavigationEvent> = _navigationEvent.asStateFlow()
 
     fun requestNavigation(route: String, isOnTrackScreen: Boolean) {
-        if (isOnTrackScreen && route != "track") {
-            _navigationEvent.value = NavigationEvent.ConfirmLeaveTrack(route)
-        } else {
-            _navigationEvent.value = NavigationEvent.NavigateTo(route)
-        }
+        _navigationEvent.value = NavigationEvent.NavigateTo(route)
     }
 
     fun clearNavigationEvent() {
         _navigationEvent.value = NavigationEvent.None
-    }
-
-    fun confirmLeaveTrack(route: String) {
-        _navigationEvent.value = NavigationEvent.NavigateTo(route)
     }
 } 

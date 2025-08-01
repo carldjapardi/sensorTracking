@@ -5,10 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -59,23 +56,6 @@ class MainActivity : ComponentActivity() {
                     }
                 ) { innerPadding ->
                     when (val event = navigationEvent) {
-                        is NavigationEvent.ConfirmLeaveTrack -> {
-                            AlertDialog(
-                                onDismissRequest = { appViewModel.clearNavigationEvent() },
-                                title = { Text("Stop Tracking?") },
-                                text = { Text("Do you want to stop the current tracking and save, or cancel?") },
-                                confirmButton = {
-                                    Button(onClick = {
-                                        appViewModel.confirmLeaveTrack(event.route)
-                                    }) { Text("Save and Leave") }
-                                },
-                                dismissButton = {
-                                    Button(onClick = {
-                                        appViewModel.clearNavigationEvent()
-                                    }) { Text("Cancel") }
-                                }
-                            )
-                        }
                         is NavigationEvent.NavigateTo -> {
                             LaunchedEffect(event.route) {
                                 navController.navigate(event.route) {
